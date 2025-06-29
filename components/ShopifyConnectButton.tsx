@@ -10,10 +10,10 @@ export default function ShopifyConnectButton() {
   const [error, setError] = useState('');
 
   const handleConnect = () => {
-    // if (!shopDomain.endsWith('.myshopify.com')) {
-    //   setError('请输入有效的 Shopify 商店域名（例如 yourstore.myshopify.com）');
-    //   return;
-    // }
+    if (!shopDomain.endsWith('.myshopify.com')) {
+      setError('请输入有效的 Shopify 商店域名（例如 yourstore.myshopify.com）');
+      return;
+    }
 
     const shop = 'gvqafi-q0.myshopify.com'
     // const shop = 'testshoppilot.myshopify.com'
@@ -23,7 +23,7 @@ export default function ShopifyConnectButton() {
     const scope = 'write_products';
     const state = 'shoppilot-secure-state'; // 可换成动态值避免伪造
 
-    const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}&grant_options[]=per-user`;
+    const authUrl = `https://${shopDomain}/admin/oauth/authorize?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}&grant_options[]=per-user`;
     console.log(authUrl)
     window.location.href = authUrl;
   };
