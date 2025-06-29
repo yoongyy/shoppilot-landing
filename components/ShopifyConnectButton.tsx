@@ -1,0 +1,51 @@
+// components/ShopifyConnectButton.tsx
+'use client';
+
+import { useState } from 'react';
+
+// console.log('SHOPIFY_CLIENT_ID', process.env.NEXT_PUBLIC_SHOPIFY_API_KEY);
+
+export default function ShopifyConnectButton() {
+  const [shopDomain, setShopDomain] = useState('');
+  const [error, setError] = useState('');
+
+  const handleConnect = () => {
+    // if (!shopDomain.endsWith('.myshopify.com')) {
+    //   setError('请输入有效的 Shopify 商店域名（例如 yourstore.myshopify.com）');
+    //   return;
+    // }
+
+    const shop = 'gvqafi-q0.myshopify.com'
+    // const shop = 'testshoppilot.myshopify.com'
+    const clientId = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY;
+    const redirectUri = encodeURIComponent('https://shoppilot.app/api/shopify/callback');
+    // const scope = encodeURIComponent('write_products,write_pages,write_themes,write_content');
+    const scope = 'write_products';
+    const state = 'shoppilot-secure-state'; // 可换成动态值避免伪造
+
+    const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}&grant_options[]=per-user`;
+    console.log(authUrl)
+    window.location.href = authUrl;
+  };
+
+  return (
+    <div className="w-full max-w-md mx-auto mt-12 text-center">
+      <h2 className="text-xl font-semibold mb-4">🔗 连接你的 Shopify 商店</h2>
+      <input
+        type="text"
+        placeholder="yourstore.myshopify.com"
+        value={shopDomain}
+        onChange={(e) => setShopDomain(e.target.value.trim())}
+        className="w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none"
+      />
+      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+
+      <button
+        onClick={handleConnect}
+        className="mt-4 px-6 py-3 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition"
+      >
+        🚀 连接 Shopify 商店
+      </button>
+    </div>
+  );
+}
