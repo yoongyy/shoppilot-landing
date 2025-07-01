@@ -12,7 +12,7 @@ export default function Page() {
   const [shopStatus, setShopStatus] = useState<'idle' | 'deploying' | 'done' | 'error'>('idle');
   const [shopMessage, setShopMessage] = useState('');
   const searchParams = useSearchParams();
-  const shop = searchParams.get('shop');
+  const shop = searchParams?.get('shop') || '';
 
   // 自动部署到 Shopify 商店（仅首次进入有 shop 参数时）
   useEffect(() => {
