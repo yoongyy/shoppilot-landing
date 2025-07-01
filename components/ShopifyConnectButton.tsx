@@ -42,8 +42,9 @@ export default function ShopifyConnectButton() {
       <h2 className="text-xl font-semibold mb-4">🔗 连接你的 Shopify 商店</h2>
       <input
         type="text"
-        placeholder="yourstore.myshopify.com"
+        placeholder="testshoppilot.myshopify.com"
         value={shopDomain}
+        // defaultValue="testshoppilot.myshopify.com"
         onChange={(e) => setShopDomain(e.target.value.trim())}
         className="w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none"
       />

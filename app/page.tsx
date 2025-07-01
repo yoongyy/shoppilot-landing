@@ -1,13 +1,46 @@
-// app/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ShopifyConnectButton from '@/components/ShopifyConnectButton';
 
 export default function Page() {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+
+  const [shopStatus, setShopStatus] = useState<'idle' | 'deploying' | 'done' | 'error'>('idle');
+  const [shopMessage, setShopMessage] = useState('');
+  const searchParams = useSearchParams();
+  const shop = searchParams.get('shop');
+
+  // 自动部署到 Shopify 商店（仅首次进入有 shop 参数时）
+  useEffect(() => {
+    if (shop && shopStatus === 'idle') {
+      setShopStatus('deploying');
+      setShopMessage(`正在为 ${shop} 自动部署商店内容...`);
+
+      fetch('/api/shopify/deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shop }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setShopStatus('done');
+            setShopMessage(`✅ 已成功部署内容到商店：${shop}`);
+          } else {
+            throw new Error(data.error || '未知错误');
+          }
+        })
+        .catch((err) => {
+          console.error(err);
+          setShopStatus('error');
+          setShopMessage('❌ 自动部署失败，请稍后重试。');
+        });
+    }
+  }, [shop]);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -29,6 +62,13 @@ export default function Page() {
         <p className="text-lg text-gray-600">一句话生成你的 AI 电商商店（使用 Google Gemini）</p>
       </header>
 
+      {/* 自动部署提示 */}
+      {shop && (
+        <div className="w-full max-w-xl text-center mb-6">
+          <p className="text-sm text-blue-600">{shopMessage}</p>
+        </div>
+      )}
+
       <section className="w-full max-w-xl flex flex-col items-center">
         <input
           type="text"
@@ -41,7 +81,7 @@ export default function Page() {
           onClick={handleGenerate}
           className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-2xl shadow hover:bg-blue-700 transition"
         >
-          {loading ? '🚧 正在生成中...' : '🚀 生成我的商店内容' }
+          {loading ? '🚧 正在生成中...' : '🚀 生成我的商店内容'}
         </button>
       </section>
 
