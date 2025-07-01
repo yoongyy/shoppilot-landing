@@ -41,7 +41,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 重定向到首页（带 shop 参数）
     res.redirect(`https://shoppilot.app/?shop=${shop}`);
   } catch (error: any) {
-    console.error('[Shopify OAuth Error]', error?.response?.data || error);
-    res.status(500).json({ error: 'Shopify OAuth 失败', detail: error?.response?.data || error });
+    console.error('[Shopify OAuth Error]', {
+      message: error.message,
+      responseData: error?.response?.data,
+      status: error?.response?.status,
+    });
+    
+    res.status(500).json({
+      error: 'Shopify OAuth 失败',
+      detail: {
+        message: error.message,
+        data: error?.response?.data,
+        status: error?.response?.status,
+      },
+    });
   }
 }
