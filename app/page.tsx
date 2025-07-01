@@ -11,6 +11,7 @@ function PageContent() {
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [deploying, setDeploying] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -23,6 +24,24 @@ function PageContent() {
     const data = await res.json();
     setResult(data);
     setLoading(false);
+  };
+
+  const handleDeploy = async () => {
+    if (!shop) return;
+    setDeploying(true);
+    const res = await fetch('/api/shopify/deploy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ shop }),
+    });
+    const data = await res.json();
+    setDeploying(false);
+
+    if (data.product) {
+      alert('✅ 商品已成功发布到你的 Shopify 店铺！');
+    } else {
+      alert('❌ 发布失败：' + JSON.stringify(data.error || data.detail));
+    }
   };
 
   return (
@@ -67,6 +86,14 @@ function PageContent() {
                 </div>
               ))}
             </div>
+            {shop && (
+              <button
+                onClick={handleDeploy}
+                className="mt-6 px-6 py-3 bg-green-600 text-white rounded-2xl shadow hover:bg-green-700 transition"
+              >
+                {deploying ? '📦 正在部署中...' : '🚚 发布到 Shopify 商店'}
+              </button>
+            )}
           </div>
         </section>
       )}
