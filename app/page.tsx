@@ -1,46 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
 import ShopifyConnectButton from '@/components/ShopifyConnectButton';
+import { useSearchParams } from 'next/navigation';
 
-export default function Page() {
-  const [prompt, setPrompt] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-
-  const [shopStatus, setShopStatus] = useState<'idle' | 'deploying' | 'done' | 'error'>('idle');
-  const [shopMessage, setShopMessage] = useState('');
+function PageContent() {
   const searchParams = useSearchParams();
   const shop = searchParams?.get('shop') || '';
 
-  // 自动部署到 Shopify 商店（仅首次进入有 shop 参数时）
-  useEffect(() => {
-    if (shop && shopStatus === 'idle') {
-      setShopStatus('deploying');
-      setShopMessage(`正在为 ${shop} 自动部署商店内容...`);
-
-      fetch('/api/shopify/deploy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shop }),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setShopStatus('done');
-            setShopMessage(`✅ 已成功部署内容到商店：${shop}`);
-          } else {
-            throw new Error(data.error || '未知错误');
-          }
-        })
-        .catch((err) => {
-          console.error(err);
-          setShopStatus('error');
-          setShopMessage('❌ 自动部署失败，请稍后重试。');
-        });
-    }
-  }, [shop]);
+  const [prompt, setPrompt] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<any>(null);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -61,13 +31,6 @@ export default function Page() {
         <h1 className="text-4xl font-bold mb-4">🛍️ ShopPilot</h1>
         <p className="text-lg text-gray-600">一句话生成你的 AI 电商商店（使用 Google Gemini）</p>
       </header>
-
-      {/* 自动部署提示 */}
-      {shop && (
-        <div className="w-full max-w-xl text-center mb-6">
-          <p className="text-sm text-blue-600">{shopMessage}</p>
-        </div>
-      )}
 
       <section className="w-full max-w-xl flex flex-col items-center">
         <input
@@ -108,12 +71,19 @@ export default function Page() {
         </section>
       )}
 
-      {/* 连接 Shopify 商店按钮 */}
       <ShopifyConnectButton />
 
       <footer className="mt-16 text-center text-gray-400 text-sm">
         <p>© 2025 ShopPilot.app · AI驱动 · 一句话开店 · hello@shoppilot.app</p>
       </footer>
     </main>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>🔄 加载中...</div>}>
+      <PageContent />
+    </Suspense>
   );
 }
