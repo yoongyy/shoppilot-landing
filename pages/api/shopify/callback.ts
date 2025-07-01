@@ -5,7 +5,7 @@ import axios from 'axios';
 
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY!;
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET!;
-const MONGO_DB_URL = process.env.MONGO_DB_URL!;
+const MONGO_DB_URL = process.env.MONGO_DB_URL;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const { code, shop } = req.query;
@@ -55,5 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         status: error?.response?.status,
       },
     });
+    
   }
 }
