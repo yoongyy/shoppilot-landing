@@ -5,7 +5,8 @@ import { shopifyApi, LATEST_API_VERSION, DataType } from '@shopify/shopify-api';
 const shopify = shopifyApi({
   apiKey: process.env.SHOPIFY_API_KEY!,
   apiSecretKey: process.env.SHOPIFY_API_SECRET!,
-  scopes: ['write_products', 'write_themes', 'write_pages', 'write_content'],
+  // scopes: ['write_products', 'write_themes', 'write_pages', 'write_content'],
+  scopes: ['write_products', 'write_themes', 'write_content'],
   hostName: 'shoppilot.app',
   isEmbeddedApp: false,
   apiVersion: LATEST_API_VERSION,
@@ -42,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       type: DataType.JSON,
     });
-
+    console.log(shop);
     res.redirect(`https://shoppilot.app/success?shop=${shop}`);
   } catch (error: any) {
     console.error('[Shopify OAuth Error]', error);
