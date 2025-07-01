@@ -3,17 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "preinstall": "npx npm-force-resolutions",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "@shopify/shopify-api": "^11.13.0",
+    "@shopify/shopify-api": "6.1.0",
     "axios": "^1.10.0",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "resolutions": {
+    "@shopify/shopify-api": "6.1.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -23,6 +27,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.4",
+    "npm-force-resolutions": "^0.0.10",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
