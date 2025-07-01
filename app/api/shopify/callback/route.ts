@@ -1,5 +1,5 @@
 // app/api/shopify/callback/route.ts
-import { shopifyApi, LATEST_API_VERSION, Session } from '@shopify/shopify-api';
+import { shopifyApi, LATEST_API_VERSION, Session, DataType } from '@shopify/shopify-api';
 import { NextRequest, NextResponse } from 'next/server';
 
 const shopify = shopifyApi({
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
           tags: ['ai', 'autogen'],
         },
       },
-      type: 'application/json',
+      type: DataType.JSON,
     });
 
     return NextResponse.redirect(`https://shoppilot.app/success?shop=${shop}`);
