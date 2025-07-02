@@ -5,7 +5,11 @@ import { useState } from 'react';
 
 const SHOPIFY_API_KEY = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY;
 
-export default function ShopifyConnectButton() {
+interface Props {
+  sessionId: string;
+}
+
+export default function ShopifyConnectButton({ sessionId }: Props) {
   const [shopDomain, setShopDomain] = useState('');
   const [error, setError] = useState('');
 
@@ -32,7 +36,7 @@ export default function ShopifyConnectButton() {
     // const scope = 'write_products';
     const state = 'shoppilot-secure-state'; // 可换成动态值避免伪造
 
-    const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}&grant_options[]=per-user`;
+    const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}&session_id=${sessionId}&grant_options[]=per-user`;
     // console.log(authUrl)
     window.location.href = authUrl;
   };
