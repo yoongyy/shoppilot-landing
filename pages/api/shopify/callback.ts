@@ -8,8 +8,9 @@ const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET!;
 const MONGO_DB_URL = process.env.MONGO_DB_URL!;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { code, shop, state } = req.query;
-  const sessionId = req.query.session_id as string;
+  const { code, shop } = req.query;
+  const state = req.query.state as string; // "shoppilot-secure-state-<session_id>"
+  const sessionId = state.replace('shoppilot-secure-state-', '');
 
   if (!shop || !code || typeof shop !== 'string' || typeof code !== 'string') {
     return res.status(400).json({ error: 'Missing required parameters' });

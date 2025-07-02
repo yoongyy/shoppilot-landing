@@ -34,10 +34,12 @@ export default function ShopifyConnectButton({ sessionId }: Props) {
     const redirectUri = encodeURIComponent('https://shoppilot.app/api/shopify/callback');
     const scope = encodeURIComponent('write_products,write_themes,write_content');
     // const scope = 'write_products';
-    const state = 'shoppilot-secure-state'; // 可换成动态值避免伪造
+    const state = `shoppilot-secure-state-${sessionId}`; // 可换成动态值避免伪造
 
     const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}&session_id=${sessionId}&grant_options[]=per-user`;
     // console.log(authUrl)
+    // https://testshoppilot.myshopify.com/admin/oauth/authorize?client_id=598e7b4c6d15c6e9ebff6c2fea74cdf6&scope=write_products,write_themes,write_content&redirect_uri=https%3A%2F%2Fshoppilot.app%2Fapi%2Fshopify%2Fcallback&state=shoppilot-secure-state&session_id=7bdbea3f-eede-4dcc-ad1f-f16902dc3ff3&grant_options[]=per-user
+    
     window.location.href = authUrl;
   };
 
