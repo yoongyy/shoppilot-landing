@@ -1,70 +1,56 @@
-// pages/api/shopify/deploy.ts
-import type { NextApiRequest, NextApiResponse } from 'next';
+// /app/api/deploy/route.ts
+import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
 import axios from 'axios';
 
-const MONGO_URI = process.env.MONGO_DB_URL!;
-const client = new MongoClient(MONGO_URI);
-const dbName = 'shopify'; // 可自定义
-const collectionName = 'token';
+const client = new MongoClient(process.env.MONGO_DB_URL!);
+const db = client.db('shoppilot');
+const tokens = db.collection('tokens');
+const results = db.collection('temp_results');
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Only POST allowed' });
+export async function POST(req: NextRequest) {
+  const { shop, sessionId } = await req.json();
+
+  if (!shop || !sessionId) {
+    return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
   }
 
-  const { shop } = req.body;
+  const tokenDoc = await tokens.findOne({ shop });
+  const resultDoc = await results.findOne({ _id: sessionId });
 
-  if (!shop) {
-    return res.status(400).json({ error: 'Missing shop in request' });
+  if (!tokenDoc || !resultDoc) {
+    return NextResponse.json({ error: '找不到 accessToken 或生成内容' }, { status: 404 });
   }
+
+  const accessToken = tokenDoc.accessToken;
+  const result = resultDoc.result;
 
   try {
-    // 连接数据库
-    await client.connect();
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName);
-
-    // 查询 access_token
-    const tokenEntry = await collection.findOne({ shop });
-    if (!tokenEntry || !tokenEntry.accessToken) {
-      return res.status(404).json({ error: 'Shop token not found' });
+    for (const product of result.products) {
+      await axios.post(
+        `https://${shop}/admin/api/2024-04/products.json`,
+        {
+          product: {
+            title: product.name,
+            body_html: product.description,
+            vendor: 'Shoppilot',
+            product_type: 'AI商品',
+            tags: ['ai', '自动生成'],
+            images: [{ src: product.image }],
+          },
+        },
+        {
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
     }
 
-    const accessToken = tokenEntry.accessToken;
-
-    // 创建示例商品
-    const response = await axios.post(
-      `https://${shop}/admin/api/2024-04/products.json`,
-      {
-        product: {
-          title: 'AI 自动生成商品',
-          body_html: '<strong>这是一件 AI 生成的商品</strong>',
-          vendor: 'Shoppilot',
-          product_type: '智能商品',
-          tags: ['AI', '自动化'],
-        },
-      },
-      {
-        headers: {
-          'X-Shopify-Access-Token': accessToken,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-
-    return res.status(200).json({ message: '商品已成功创建', product: response.data.product });
-  } catch (error: any) {
-    console.error('[Shopify Deploy Error]', {
-      message: error.message,
-      data: error?.response?.data,
-    });
-
-    return res.status(500).json({
-      error: '部署失败',
-      detail: error?.response?.data || error.message,
-    });
-  } finally {
-    await client.close();
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    console.error('Shopify 发布失败', err?.response?.data || err);
+    return NextResponse.json({ error: '部署失败', detail: err?.response?.data || err }, { status: 500 });
   }
 }

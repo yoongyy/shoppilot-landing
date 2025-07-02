@@ -1,3 +1,4 @@
+// app/page.tsx
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -7,11 +8,21 @@ import { useSearchParams } from 'next/navigation';
 function PageContent() {
   const searchParams = useSearchParams();
   const shop = searchParams?.get('shop') || '';
+  const sessionId = searchParams?.get('session_id') || '';
 
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
-  const [deploying, setDeploying] = useState(false);
+
+  useEffect(() => {
+    if (sessionId) {
+      fetch(`/api/temp-store?id=${sessionId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data?.result) setResult(data.result);
+        });
+    }
+  }, [sessionId]);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -22,26 +33,17 @@ function PageContent() {
       body: JSON.stringify({ prompt }),
     });
     const data = await res.json();
-    setResult(data);
-    setLoading(false);
-  };
 
-  const handleDeploy = async () => {
-    if (!shop) return;
-    setDeploying(true);
-    const res = await fetch('/api/shopify/deploy', {
+    // POST 保存到临时存储
+    const storeRes = await fetch('/api/temp-store', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ shop }),
+      body: JSON.stringify({ result: data }),
     });
-    const data = await res.json();
-    setDeploying(false);
+    const { id } = await storeRes.json();
 
-    if (data.product) {
-      alert('✅ 商品已成功发布到你的 Shopify 店铺！');
-    } else {
-      alert('❌ 发布失败：' + JSON.stringify(data.error || data.detail));
-    }
+    // 刷新带上 session_id
+    window.location.href = `/?session_id=${id}`;
   };
 
   return (
@@ -86,19 +88,13 @@ function PageContent() {
                 </div>
               ))}
             </div>
-            {shop && (
-              <button
-                onClick={handleDeploy}
-                className="mt-6 px-6 py-3 bg-green-600 text-white rounded-2xl shadow hover:bg-green-700 transition"
-              >
-                {deploying ? '📦 正在部署中...' : '🚚 发布到 Shopify 商店'}
-              </button>
-            )}
           </div>
         </section>
       )}
 
-      <ShopifyConnectButton />
+      {result && (
+        <ShopifyConnectButton sessionId={sessionId} />
+      )}
 
       <footer className="mt-16 text-center text-gray-400 text-sm">
         <p>© 2025 ShopPilot.app · AI驱动 · 一句话开店 · hello@shoppilot.app</p>
