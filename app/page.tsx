@@ -9,6 +9,7 @@ function PageContent() {
   const searchParams = useSearchParams();
   const shop = searchParams?.get('shop') || '';
   const sessionId = searchParams?.get('session_id') || '';
+  const isConnected = shop && sessionId;
 
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
@@ -92,9 +93,35 @@ function PageContent() {
         </section>
       )}
 
-      {result && (
-        <ShopifyConnectButton sessionId={sessionId} />
-      )}
+    {result && (
+      <>
+        {!sessionId || !shop ? (
+          <ShopifyConnectButton sessionId={sessionId || ''} />
+        ) : (
+          <div className="mt-10 text-center">
+            <p className="text-green-600 font-semibold mb-4">
+              ✅ 已成功连接 Shopify 商店：{shop}
+            </p>
+            <button
+              className="px-6 py-3 bg-green-700 text-white rounded-2xl shadow hover:bg-green-800 transition"
+              onClick={async () => {
+                setLoading(true);
+                const res = await fetch('/api/shopify/deploy', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ sessionId }),
+                });
+                const data = await res.json();
+                setLoading(false);
+                alert(data.success ? '✅ 商店已成功部署到 Shopify！' : `❌ 部署失败：${data.error || '未知错误'}`);
+              }}
+            >
+              🚀 上传商店到 Shopify
+            </button>
+          </div>
+        )}
+      </>
+    )}
 
       <footer className="mt-16 text-center text-gray-400 text-sm">
         <p>© 2025 ShopPilot.app · AI驱动 · 一句话开店 · hello@shoppilot.app</p>
