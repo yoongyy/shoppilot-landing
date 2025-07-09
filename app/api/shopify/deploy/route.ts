@@ -1,4 +1,3 @@
-// app/api/shopify/deploy/route.ts
 import { NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
 
@@ -11,31 +10,31 @@ export async function POST(req: Request) {
     const { sessionId } = body;
 
     if (!sessionId) {
-      return NextResponse.json({ success: false, error: '缺少 sessionId' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Missing sessionId' }, { status: 400 });
     }
 
-    // 连接 MongoDB
+    // Connect to MongoDB
     const client = await MongoClient.connect(MONGO_URL);
     const db = client.db(DB_NAME);
     const temp_results = db.collection('temp_results');
     const tokens = db.collection('tokens');
 
-    // 获取 store data（用户生成的内容）
+    // Fetch generated store data
     const storeData = await temp_results.findOne({ id: sessionId });
     if (!storeData) {
-      return NextResponse.json({ success: false, error: '未找到生成的商店内容' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Generated store content not found' }, { status: 404 });
     }
 
-    // 获取 token data（shopify token）
+    // Fetch Shopify token info
     const tokenData = await tokens.findOne({ sessionId });
     if (!tokenData || !tokenData.accessToken || !tokenData.shop) {
-      return NextResponse.json({ success: false, error: '未找到 shopify 授权信息' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Shopify authorization info not found' }, { status: 404 });
     }
 
     const accessToken = tokenData.accessToken;
     const shop = tokenData.shop;
 
-    // 上传商品到 Shopify
+    // Upload products to Shopify
     for (const product of storeData.result?.products || []) {
       const res = await fetch(`https://${shop}/admin/api/2024-04/products.json`, {
         method: 'POST',
@@ -48,8 +47,8 @@ export async function POST(req: Request) {
             title: product.name,
             body_html: product.description,
             vendor: 'ShopPilot',
-            product_type: 'AI产品',
-            tags: ['AI生成', 'shoppilot'],
+            product_type: 'AI Product',
+            tags: ['AI Generated', 'ShopPilot'],
             images: [
               {
                 src: product.image,
@@ -58,17 +57,17 @@ export async function POST(req: Request) {
           },
         }),
       });
-      
+
       if (!res.ok) {
         const err = await res.json();
-        console.error('Shopify 上传失败:', err);
-        return NextResponse.json({ success: false, error: '上传失败', detail: err }, { status: 500 });
+        console.error('Failed to upload to Shopify:', err);
+        return NextResponse.json({ success: false, error: 'Upload failed', detail: err }, { status: 500 });
       }
     }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
-    console.error('[部署错误]', error);
-    return NextResponse.json({ success: false, error: '内部错误', detail: error.message }, { status: 500 });
+    console.error('[Deployment Error]', error);
+    return NextResponse.json({ success: false, error: 'Internal server error', detail: error.message }, { status: 500 });
   }
 }

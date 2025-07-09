@@ -51,13 +51,13 @@ function PageContent() {
     <main className="min-h-screen bg-white text-gray-900 flex flex-col items-center p-6">
       <header className="w-full max-w-3xl text-center py-12">
         <h1 className="text-4xl font-bold mb-4">🛍️ ShopPilot</h1>
-        <p className="text-lg text-gray-600">一句话生成你的 AI 电商商店（使用 Google Gemini）</p>
+        <p className="text-lg text-gray-600">Create your Shopify store instantly with ShopPilot</p>
       </header>
 
       <section className="w-full max-w-xl flex flex-col items-center">
         <input
           type="text"
-          placeholder="我想卖猫咪周边..."
+          placeholder="I want to sell cat accessories..."
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           className="w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring focus:border-blue-300"
@@ -66,13 +66,13 @@ function PageContent() {
           onClick={handleGenerate}
           className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-2xl shadow hover:bg-blue-700 transition"
         >
-          {loading ? '🚧 正在生成中...' : '🚀 生成我的商店内容'}
+          {loading ? '🚧 Generating...' : '🚀 Generate Store Content'}
         </button>
       </section>
 
       {result && result.products && Array.isArray(result.products) && (
         <section className="w-full max-w-3xl mt-12 text-center">
-          <h2 className="text-xl font-semibold mb-4">✨ 商店预览</h2>
+          <h2 className="text-xl font-semibold mb-4">✨ Store Preview</h2>
           <div className="border rounded-xl p-6 shadow-sm bg-gray-50">
             <h3 className="text-2xl font-bold">{result.storeName}</h3>
             <p className="text-gray-600 mb-4">{result.description}</p>
@@ -100,7 +100,7 @@ function PageContent() {
         ) : (
           <div className="mt-10 text-center">
             <p className="text-green-600 font-semibold mb-4">
-              ✅ 已成功连接 Shopify 商店：{shop}
+              ✅ Successfully connected to Shopify store：{shop}
             </p>
             <button
               className="px-6 py-3 bg-green-700 text-white rounded-2xl shadow hover:bg-green-800 transition"
@@ -113,10 +113,10 @@ function PageContent() {
                 });
                 const data = await res.json();
                 setLoading(false);
-                alert(data.success ? '✅ 商店已成功部署到 Shopify！' : `❌ 部署失败：${data.error || '未知错误'}`);
+                alert(data.success ? '✅ Your store has been successfully deployed to Shopify' : `❌ Deployment failed：${data.error || 'Unknown error'}`);
               }}
             >
-              🚀 上传商店到 Shopify
+              🚀 Deploy Store to Shopify
             </button>
           </div>
         )}
@@ -124,7 +124,7 @@ function PageContent() {
     )}
 
       <footer className="mt-16 text-center text-gray-400 text-sm">
-        <p>© 2025 ShopPilot.app · AI驱动 · 一句话开店 · hello@shoppilot.app</p>
+        <p>© 2025 ShopPilot</p>
       </footer>
     </main>
   );
@@ -132,7 +132,7 @@ function PageContent() {
 
 export default function Page() {
   return (
-    <Suspense fallback={<div>🔄 加载中...</div>}>
+    <Suspense fallback={<div>🔄 Loading...</div>}>
       <PageContent />
     </Suspense>
   );

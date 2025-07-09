@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ShopPilot",
-  description: "一句话生成你的 AI 电商商店",
+  description: "One sentence to launch your Shopify store",
 };
 
 export default function RootLayout({

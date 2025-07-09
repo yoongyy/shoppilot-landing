@@ -4,29 +4,39 @@ export async function POST(req: NextRequest) {
   const { prompt } = await req.json();
 
   const fullPrompt = `
-请严格返回 JSON 格式，生成一个商店信息，包含：
-- storeName（商店名称）
-- description（简要说明）
-- products：一个包含 3 个商品的数组，每个商品包含：
+Strictly return a valid JSON object with the following structure for an online store idea:
+
+- storeName: the name of the store
+- description: a short summary of what the store sells
+- products: an array of exactly 3 products. Each product should include:
   - name
   - description
-  - image（可使用 placeholder 图）
+  - image (use placeholder image URLs)
 
-例如：
+Example:
 {
-  "storeName": "宠物精品屋",
-  "description": "精选宠物用品和配件，让你的宠物快乐成长",
+  "storeName": "Pet Paradise",
+  "description": "High-quality accessories and supplies to keep your pets happy and healthy.",
   "products": [
     {
-      "name": "猫耳发箍",
-      "description": "可爱毛绒猫耳，适合主人佩戴",
-      "image": "https://via.placeholder.com/300x200?text=猫耳发箍"
+      "name": "Cat Ears Headband",
+      "description": "A cute plush headband perfect for pet lovers.",
+      "image": "https://via.placeholder.com/300x200?text=Cat+Ears"
     },
-    ...
+    {
+      "name": "Smart Pet Feeder",
+      "description": "Automatically dispenses food for your pet, great for busy pet owners.",
+      "image": "https://via.placeholder.com/300x200?text=Smart+Feeder"
+    },
+    {
+      "name": "Luxury Dog Bed",
+      "description": "A cozy bed designed to give your dog the ultimate comfort.",
+      "image": "https://via.placeholder.com/300x200?text=Dog+Bed"
+    }
   ]
 }
 
-用户输入描述：${prompt}
+User request: ${prompt}
 `;
 
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -48,12 +58,11 @@ export async function POST(req: NextRequest) {
   const data = await res.json();
   const raw = data.content?.[0]?.text || '';
 
-  // 清理 markdown 包裹的代码块
   const cleaned = raw.replace(/```json|```/g, '').trim();
 
   try {
     return NextResponse.json(JSON.parse(cleaned));
   } catch (e) {
-    return NextResponse.json({ error: '解析失败', raw: cleaned }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to parse Claude response', raw: cleaned }, { status: 500 });
   }
 }

@@ -1,4 +1,3 @@
-// components/ShopifyConnectButton.tsx
 'use client';
 
 import { useState } from 'react';
@@ -10,47 +9,40 @@ interface Props {
 }
 
 export default function ShopifyConnectButton({ sessionId }: Props) {
-  const [shopDomain, setShopDomain] = useState('');
+  const [shopDomain, setShopDomain] = useState('testshoppilot.myshopify.com');
   const [error, setError] = useState('');
 
   const handleConnect = () => {
     if (!shopDomain.endsWith('.myshopify.com')) {
-      setError('请输入有效的 Shopify 商店域名（例如 yourstore.myshopify.com）');
+      setError('Please enter a valid Shopify store domain (e.g., yourstore.myshopify.com)');
       return;
     }
 
-    // 解析并规范化用户输入
+    // Normalize user input
     let shop = shopDomain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
     
     if (!shop.endsWith('.myshopify.com')) {
-      alert('请输入有效的 Shopify 店铺地址（如 myshop.myshopify.com）');
+      alert('Please enter a valid Shopify store domain (e.g., yourstore.myshopify.com)');
       return;
     }
 
-
-    // https://testshoppilot.myshopify.com
-
-    const clientId = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY;
+    const clientId = SHOPIFY_API_KEY;
     const redirectUri = encodeURIComponent('https://shoppilot.app/api/shopify/callback');
     const scope = encodeURIComponent('write_products,write_themes,write_content');
-    // const scope = 'write_products';
-    const state = `shoppilot-secure-state-${sessionId}`; // 可换成动态值避免伪造
+    const state = `shoppilot-secure-state-${sessionId}`;
 
     const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}&session_id=${sessionId}&grant_options[]=per-user`;
-    // console.log(authUrl)
-    // https://testshoppilot.myshopify.com/admin/oauth/authorize?client_id=598e7b4c6d15c6e9ebff6c2fea74cdf6&scope=write_products,write_themes,write_content&redirect_uri=https%3A%2F%2Fshoppilot.app%2Fapi%2Fshopify%2Fcallback&state=shoppilot-secure-state&session_id=7bdbea3f-eede-4dcc-ad1f-f16902dc3ff3&grant_options[]=per-user
-    
+
     window.location.href = authUrl;
   };
 
   return (
     <div className="w-full max-w-md mx-auto mt-12 text-center">
-      <h2 className="text-xl font-semibold mb-4">🔗 连接你的 Shopify 商店</h2>
+      <h2 className="text-xl font-semibold mb-4">🔗 Connect Your Shopify Store</h2>
       <input
         type="text"
-        placeholder="testshoppilot.myshopify.com"
+        placeholder="yourstore.myshopify.com"
         value={shopDomain}
-        // defaultValue="testshoppilot.myshopify.com"
         onChange={(e) => setShopDomain(e.target.value.trim())}
         className="w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none"
       />
@@ -60,7 +52,7 @@ export default function ShopifyConnectButton({ sessionId }: Props) {
         onClick={handleConnect}
         className="mt-4 px-6 py-3 bg-green-600 text-white rounded-2xl hover:bg-green-700 transition"
       >
-        🚀 连接 Shopify 商店
+        🚀 Connect to Shopify Store
       </button>
     </div>
   );
