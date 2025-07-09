@@ -4,6 +4,8 @@ import shutil
 import uuid
 import zipfile
 import requests
+import boto3
+import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
@@ -18,6 +20,12 @@ CLAUDE_API_URL = os.getenv("CLAUDE_API_URL")      # your Claude processing API e
 
 SHOPIFY_UPLOAD_URL = "/admin/api/2024-04/themes.json"
 
+R2_ACCOUNT_ID = os.getenv("R2_ACCOUNT_ID")
+R2_ACCESS_KEY = os.getenv("R2_ACCESS_KEY")
+R2_SECRET_KEY = os.getenv("R2_SECRET_KEY")
+R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "shopilot-themes")
+R2_DOWNLOAD_DOMAIN = os.getenv("R2_DOWNLOAD_DOMAIN")
+
 client = MongoClient(MONGO_URL)
 db = client[os.getenv("MONGODB_DB", "shoppilot")]
 temp_results = db["temp_results"]
@@ -30,6 +38,31 @@ def unzip_theme(source_zip, dest_dir):
 
 def zip_theme(source_dir, zip_path):
     shutil.make_archive(zip_path.replace(".zip", ""), 'zip', source_dir)
+
+def upload_to_r2(local_file_path, dest_file_name):
+    endpoint = f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
+
+    session = boto3.session.Session()
+    client = session.client(
+        's3',
+        region_name='auto',
+        endpoint_url=endpoint,
+        aws_access_key_id=R2_ACCESS_KEY,
+        aws_secret_access_key=R2_SECRET_KEY,
+    )
+    
+    try:
+        client.upload_file(
+            local_file_path,
+            R2_BUCKET_NAME,
+            dest_file_name,
+            ExtraArgs={"ACL": "public-read", "ContentType": "application/zip"}
+        )
+        public_url = f"{R2_DOWNLOAD_DOMAIN}/{dest_file_name}"
+        return public_url
+    except Exception as e:
+        print("Upload failed:", e)
+        return None
 
 def process_liquid_files(folder, prompt):
     for root, dirs, files in os.walk(folder):
@@ -65,19 +98,17 @@ def upload_shopify_theme(session_id, zip_output_path):
     files = {
         'theme[role]': (None, 'unpublished'),
         'theme[name]': (None, f"ShopPilot-{session_id[:6]}"), 
-        'theme[zip]': (f"{session_id}.zip", open(zip_output_path, 'rb'), 'application/zip')
+        'theme[src]': (None, zip_output_path)
     }
 
-    print(shop_domain+SHOPIFY_UPLOAD_URL)
-    print(access_token)
-    response = requests.post(shop_domain+SHOPIFY_UPLOAD_URL.format(shop=shop_domain), headers=headers, files=files)
+    response = requests.post(shop_domain+SHOPIFY_UPLOAD_URL, headers=headers, files=files)
 
     if response.status_code == 201:
         theme_id = response.json().get("theme", {}).get("id")
         return {
             "success": True,
             "themeId": theme_id,
-            "previewUrl": f"https://{shop_domain}/?preview_theme_id={theme_id}"
+            "previewUrl": f"{shop_domain}/?preview_theme_id={theme_id}"
         }
     else:
         return {
@@ -104,11 +135,15 @@ def process_theme(session_id, shop):
     unzip_theme(theme_path, theme_work_dir)
     
     # process_liquid_files(theme_work_dir, prompt)
+
     zip_output_path = os.path.join(TEMP_DIR, f"{session_id}.zip")
     zip_theme(theme_work_dir, zip_output_path)
 
-    # upload theme to Shopify
-    return upload_shopify_theme(session_id, zip_output_path)
+    # Upload zip file to S3
+    public_zip_url = upload_to_r2(zip_output_path, session_id)
+
+    # Upload theme to Shopify
+    return upload_shopify_theme(session_id, public_zip_url)
 
 
 # Example Flask or FastAPI endpoint (choose one)
@@ -125,6 +160,5 @@ async def api_process(req: Request):
     data = await req.json()
     session_id = data.get("sessionId")
     shop = data.get("shop")
-    # return process_theme(session_id, shop)
-    zip_output_path = './temp/d10e80f5-7ec5-48f2-82ae-1c056a9ca397.zip'
-    return upload_shopify_theme(session_id, zip_output_path)
+    return process_theme(session_id, shop)
+
