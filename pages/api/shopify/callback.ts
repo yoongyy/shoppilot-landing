@@ -43,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     await tokens.updateOne(
       { shop },
-      { $set: { shop, email, accessToken, sessionId, updatedAt: new Date() } },
+      { $set: { shop, email, accessToken, sessionId, status: 'new', updatedAt: new Date() } },
       { upsert: true }
     );
 
