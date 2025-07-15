@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   let sessionId = '';
   let email = '';
   let themeId = '';
-  
+
   try {
     const parsed = JSON.parse(decodeURIComponent(rawState));
     sessionId = parsed.sessionId;
@@ -43,12 +43,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     await tokens.updateOne(
       { shop },
-      { $set: { shop, accessToken, sessionId, updatedAt: new Date() } },
+      { $set: { shop, email, accessToken, sessionId, updatedAt: new Date() } },
       { upsert: true }
     );
 
     // ✅ 带上 sessionId 回首页，恢复页面状态
-    res.redirect(`/?shop=${shop}&session_id=${sessionId}`);
+    res.redirect(`/finish?shop=${shop}&session_id=${sessionId}`);
   } catch (err: any) {
     console.error('Shopify callback error', err?.response?.data || err);
     res.status(500).json({ error: 'OAuth 失败', detail: err?.response?.data || err });
