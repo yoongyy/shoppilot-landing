@@ -96,8 +96,9 @@ function PageContent() {
                   rel="noopener noreferrer"
                   className="text-xs text-blue-600 underline mt-1 block"
                 >
-                  Preview
+                  Preview Theme
                 </a>
+                <p className="text-sm text-gray-500 mt-1">Password: 123456</p>
                 {/* {isSelected && (
                   <div className="text-xs text-blue-500 mt-1 font-semibold">Selected</div>
                 )} */}
