@@ -1,109 +1,119 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 
-function FinishContent() {
+export default function FinishPage() {
   const searchParams = useSearchParams();
-  const sessionId = searchParams?.get('session_id');
-  const [shop, setShop] = useState('');
-  // const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<'loading' | 'paid' | 'pending_payment' | 'error'>('loading');
-  const [stripeSessionUrl, setStripeSessionUrl] = useState('');
+  const orderId = searchParams?.get('order_id');
+
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
+  const [isPaying, setIsPaying] = useState(false);
 
   useEffect(() => {
-    if (sessionId) {
-      fetch(`/api/shopify/order-status?sessionId=${sessionId}`)
+    if (orderId) {
+      fetch(`/api/shopify/order-status?session_id=${orderId}`)
         .then(res => res.json())
-        .then(async (data) => {
-          setShop(data.shop || '');
-          // setLoading(false);
-          if (data.status === 'paid') {
-            setStatus('paid');
-          } else if (data.status === 'pending_payment') {
-            setStatus('pending_payment');
-
-            // Fetch Stripe Checkout Session URL
-            const stripeRes = await fetch('/api/create-checkout-session', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                sessionId: sessionId,
-                themeId: data.themeId,
-                email: data.email,
-                amount: data.amount,
-               }),
-            });
-            const stripeData = await stripeRes.json();
-            setStripeSessionUrl(stripeData.url || '');
-          } else {
-            setStatus('error');
+        .then(res => {
+          if (res.success) {
+            setData(res.data);
           }
-        })
-        .catch(() => setStatus('error'));
+          setLoading(false);
+        });
     }
-  }, [sessionId]);
+  }, [orderId]);
 
-  if (!sessionId) {
-    return (
-      <main className="min-h-screen flex justify-center items-center text-center p-6">
-        <p className="text-red-600 text-lg">❌ Missing session ID. Please try again from the beginning.</p>
-      </main>
-    );
-  }
+  const handlePayNow = async () => {
+    if (!data?.themeId || !data?.email || !orderId || !data?.amount) {
+      alert('Missing info to start payment');
+      return;
+    }
+
+    setIsPaying(true);
+
+    try {
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          themeId: data.themeId,
+          email: data.email,
+          sessionId: orderId,
+          amount: data.amount,
+        }),
+      });
+
+      const body = await res.json();
+      if (body.url) {
+        window.location.href = body.url;
+      } else {
+        alert('Failed to start payment');
+      }
+    } catch (e) {
+      alert('Error redirecting to Stripe');
+    } finally {
+      setIsPaying(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white flex flex-col justify-center items-center p-6 text-center">
       <h1 className="text-3xl font-bold mb-4">🎉 Shopify Connected!</h1>
-      {status === 'loading' && <p className="text-gray-500">Checking store connection...</p>}
 
-      {status === 'paid' && (
+      {loading ? (
+        <p className="text-gray-500">Checking store connection...</p>
+      ) : data ? (
         <>
-          <p className="text-lg text-green-600 mb-4">
-            ✅ Successfully connected to <strong>{shop}</strong>
+          <p className="text-lg text-green-600 mb-2">
+            ✅ Connected to <strong>{data.shop}</strong>
           </p>
-          <p className="text-gray-600 max-w-md">
-            Your selected theme will be uploaded shortly. You’ll receive an email once done.
-          </p>
-        </>
-      )}
 
-      {status === 'pending_payment' && (
-        <>
-          <p className="text-lg text-yellow-600 mb-4">
-            ⚠️ Theme payment required before setup.
-          </p>
-          <p className="text-gray-600 max-w-md mb-4">
-            Please complete your payment to proceed with deploying the theme to <strong>{shop}</strong>.
-          </p>
-          <a
-            href={stripeSessionUrl}
-            target="_blank"
-            className="inline-block mt-4 px-6 py-3 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
-          >
-            💳 Pay Now
-          </a>
+          {data.status === 'paid' ? (
+            <>
+              <p className="text-gray-600 max-w-md">
+                Your theme is being processed. You’ll receive an email when the upload completes.
+              </p>
+              {data.previewUrl && (
+                <a
+                  href={data.previewUrl}
+                  target="_blank"
+                  className="mt-4 text-blue-500 underline block"
+                >
+                  🔍 View Store Preview
+                </a>
+              )}
+            </>
+          ) : data.amount > 0 ? (
+            <>
+              <p className="text-red-600 mb-2 font-semibold">
+                🚫 Payment required to continue.
+              </p>
+              <p className="text-gray-600 mb-4">
+                This theme costs <strong>${data.amount}</strong>. Please complete the payment to begin theme setup.
+              </p>
+              <button
+                onClick={handlePayNow}
+                disabled={isPaying}
+                className="px-6 py-3 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition"
+              >
+                {isPaying ? 'Processing...' : '💳 Pay Now'}
+              </button>
+            </>
+          ) : (
+            <p className="text-gray-600">Something went wrong. Please contact support.</p>
+          )}
         </>
-      )}
-
-      {status === 'error' && (
-        <p className="text-red-600">❌ An error occurred. Please try again later.</p>
+      ) : (
+        <p className="text-red-500">❌ Failed to load order info.</p>
       )}
 
       <a
         href="/"
-        className="mt-10 inline-block px-6 py-3 bg-gray-200 text-gray-700 rounded-xl shadow hover:bg-gray-300 transition"
+        className="mt-8 inline-block px-6 py-3 bg-gray-100 text-sm rounded-xl border hover:bg-gray-200"
       >
         🔁 Back to Home
       </a>
     </main>
-  );
-}
-
-export default function FinishPage() {
-  return (
-    <Suspense fallback={<div className="text-center py-20">🔄 Loading...</div>}>
-      <FinishContent />
-    </Suspense>
   );
 }
