@@ -1,22 +1,21 @@
-# backend/api/process_theme.py
 import os
 import shutil
 import uuid
 import zipfile
 import requests
 import boto3
-import os
 from pymongo import MongoClient
+from bson import ObjectId
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
-from bson import ObjectId  
 
-# Load env vars
+# Load environment variables
 load_dotenv()
+
+# Configs
 MONGO_URL = os.getenv("MONGO_DB_URL")
-THEME_DIR = os.getenv("THEME_DIR", "./themes")  # themes source directory
-TEMP_DIR = os.getenv("TEMP_DIR", "./temp")       # working temp directory
-CLAUDE_API_URL = os.getenv("CLAUDE_API_URL")      # your Claude processing API endpoint
+THEME_DIR = os.getenv("THEME_DIR", "./themes")
+TEMP_DIR = os.getenv("TEMP_DIR", "./temp")
+CLAUDE_API_URL = os.getenv("CLAUDE_API_URL")  # Optional for AI processing
 
 SHOPIFY_UPLOAD_URL = "/admin/api/2024-04/themes.json"
 
@@ -26,11 +25,12 @@ R2_SECRET_KEY = os.getenv("R2_SECRET_KEY")
 R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "shopilot-themes")
 R2_DOWNLOAD_DOMAIN = os.getenv("R2_DOWNLOAD_DOMAIN")
 
+# MongoDB collections
 client = MongoClient(MONGO_URL)
 db = client[os.getenv("MONGODB_DB", "shoppilot")]
 temp_results = db["temp_results"]
 tokens = db["tokens"]
-themes = db["themes"]  # optional if you use theme db
+themes = db["themes"]
 
 def unzip_theme(source_zip, dest_dir):
     with zipfile.ZipFile(source_zip, 'r') as zip_ref:
@@ -41,7 +41,6 @@ def zip_theme(source_dir, zip_path):
 
 def upload_to_r2(local_file_path, dest_file_name):
     endpoint = f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
-
     session = boto3.session.Session()
     client = session.client(
         's3',
@@ -50,7 +49,7 @@ def upload_to_r2(local_file_path, dest_file_name):
         aws_access_key_id=R2_ACCESS_KEY,
         aws_secret_access_key=R2_SECRET_KEY,
     )
-    
+
     try:
         client.upload_file(
             local_file_path,
@@ -58,57 +57,30 @@ def upload_to_r2(local_file_path, dest_file_name):
             dest_file_name,
             ExtraArgs={"ACL": "public-read", "ContentType": "application/zip"}
         )
-        public_url = f"{R2_DOWNLOAD_DOMAIN}/{dest_file_name}"
-        return public_url
+        return f"{R2_DOWNLOAD_DOMAIN}/{dest_file_name}"
     except Exception as e:
-        print("Upload failed:", e)
+        print("❌ R2 Upload Failed:", e)
         return None
 
-def process_liquid_files(folder, prompt):
-    for root, dirs, files in os.walk(folder):
-        for file in files:
-            if file.endswith(".liquid"):
-                full_path = os.path.join(root, file)
-                with open(full_path, 'r', encoding='utf-8') as f:
-                    original = f.read()
-                # Call Claude API to modify
-                response = requests.post(CLAUDE_API_URL, json={
-                    "prompt": prompt,
-                    "content": original
-                })
-                if response.status_code == 200:
-                    updated = response.json().get("modified")
-                    if updated:
-                        with open(full_path, 'w', encoding='utf-8') as f:
-                            f.write(updated)
-
-def upload_shopify_theme(session_id, zip_output_path):
-    # Get token
-    token_data = tokens.find_one({"sessionId": session_id})
-    if not token_data:
-        return {"success": False, "error": "未找到 Access Token"}
-
-    access_token = token_data["accessToken"]
-    shop_domain = "https://"+token_data["shop"]
-
-    # # Upload to Shopify
+def upload_shopify_theme(session_id, zip_url, access_token, shop_domain):
+    shop_url = f"https://{shop_domain}{SHOPIFY_UPLOAD_URL}"
     headers = {
         "X-Shopify-Access-Token": access_token
     }
     files = {
         'theme[role]': (None, 'unpublished'),
-        'theme[name]': (None, f"ShopPilot-{session_id[:6]}"), 
-        'theme[src]': (None, zip_output_path)
+        'theme[name]': (None, f"ShopPilot-{session_id[:6]}"),
+        'theme[src]': (None, zip_url)
     }
 
-    response = requests.post(shop_domain+SHOPIFY_UPLOAD_URL, headers=headers, files=files)
+    response = requests.post(shop_url, headers=headers, files=files)
 
     if response.status_code == 201:
         theme_id = response.json().get("theme", {}).get("id")
         return {
             "success": True,
             "themeId": theme_id,
-            "previewUrl": f"{shop_domain}/?preview_theme_id={theme_id}"
+            "previewUrl": f"https://{shop_domain}/?preview_theme_id={theme_id}"
         }
     else:
         return {
@@ -117,48 +89,81 @@ def upload_shopify_theme(session_id, zip_output_path):
             "detail": response.text
         }
 
-def process_theme(session_id, shop):
-    # Get prompt + theme_id
-    temp_doc = temp_results.find_one({"id": session_id})
-    if not temp_doc:
-        return {"success": False, "error": "Session 未找到"}
-
-    prompt = temp_doc.get("prompt")
-    theme_id = temp_doc.get("themeId")
-
+def process_theme_for_session(session_id, theme_id, shop, access_token):
     theme_info = themes.find_one({"_id": ObjectId(theme_id)}) if theme_id else None
-    theme_path = theme_info["path"] if theme_info else os.path.join(THEME_DIR, "default.zip")
 
-    # Create working folder
+    if not theme_info or not os.path.exists(theme_info["path"]):
+        return {"success": False, "error": f"❌ Theme {theme_id} not found."}
+
+    theme_path = theme_info["path"]
+
+    # Create working directory
     theme_work_dir = os.path.join(TEMP_DIR, session_id)
     os.makedirs(theme_work_dir, exist_ok=True)
     unzip_theme(theme_path, theme_work_dir)
-    
+
+    # (Optional) Modify liquid files
     # process_liquid_files(theme_work_dir, prompt)
 
+    # Zip and upload to R2
     zip_output_path = os.path.join(TEMP_DIR, f"{session_id}.zip")
     zip_theme(theme_work_dir, zip_output_path)
+    zip_url = upload_to_r2(zip_output_path, f"{session_id}.zip")
 
-    # Upload zip file to S3
-    public_zip_url = upload_to_r2(zip_output_path, session_id)
+    if not zip_url:
+        return {"success": False, "error": "❌ Upload to R2 failed."}
 
-    # Upload theme to Shopify
-    return upload_shopify_theme(session_id, public_zip_url)
+    # Upload to Shopify
+    return upload_shopify_theme(session_id, zip_url, access_token, shop)
 
+def run_theme_processor():
+    print("🔄 Checking for new Shopify theme tasks...")
+    new_tasks = tokens.find({"status": "new"})
 
-# Example Flask or FastAPI endpoint (choose one)
+    for task in new_tasks:
+        session_id = task.get("sessionId")
+        theme_id = task.get("themeId")
+        shop = task.get("shop")
+        access_token = task.get("accessToken")
 
-# For FastAPI:
-app = FastAPI()
+        print(f"🛠️ Processing theme for: {shop}, session: {session_id}")
 
-@app.get("/")
-async def root():
-    return {"message": "✅ FastAPI is running!"}
+        try:
+            result = process_theme_for_session(session_id, theme_id, shop, access_token)
 
-@app.post("/api/theme/process")
-async def api_process(req: Request):
-    data = await req.json()
-    session_id = data.get("sessionId")
-    shop = data.get("shop")
-    return process_theme(session_id, shop)
+            if result.get("success"):
+                tokens.update_one(
+                    {"_id": task["_id"]},
+                    {"$set": {
+                        "status": "done",
+                        "previewUrl": result.get("previewUrl"),
+                        "themeId": result.get("themeId"),
+                        "updatedAt": datetime.utcnow()
+                    }}
+                )
+                print(f"✅ Theme uploaded for {shop}: {result.get('previewUrl')}")
+            else:
+                tokens.update_one(
+                    {"_id": task["_id"]},
+                    {"$set": {
+                        "status": "failed",
+                        "error": result.get("error"),
+                        "updatedAt": datetime.utcnow()
+                    }}
+                )
+                print(f"❌ Failed to upload for {shop}: {result.get('error')}")
 
+        except Exception as e:
+            tokens.update_one(
+                {"_id": task["_id"]},
+                {"$set": {
+                    "status": "failed",
+                    "error": str(e),
+                    "updatedAt": datetime.utcnow()
+                }}
+            )
+            print(f"❌ Exception for {shop}: {e}")
+
+if __name__ == "__main__":
+    from datetime import datetime
+    run_theme_processor()

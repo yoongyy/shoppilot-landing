@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import ShopifyConnectButton from '@/components/ShopifyConnectButton';
+// import ShopifyConnectButton from '@/components/ShopifyConnectButton';
+import ThemeSelector from '@/components/ThemeSelector';
 import { useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -70,7 +71,9 @@ function PageContent() {
 
       <section className="w-full max-w-xl flex flex-col items-center">
         <h3 className="text-lg font-semibold mb-2">🎨 Select A Theme</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+        <ThemeSelector selectedTheme={selectedTheme} onThemeSelect={setSelectedTheme} />
+
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
           {themes.map((theme, index) => {
             const isSelected = selectedTheme?._id?.toString() === theme._id?.toString();
             return (
@@ -99,14 +102,13 @@ function PageContent() {
                   Preview Theme
                 </a>
                 <p className="text-sm text-gray-500 mt-1">Password: 123456</p>
-                {/* {isSelected && (
-                  <div className="text-xs text-blue-500 mt-1 font-semibold">Selected</div>
-                )} */}
               </div>
             );
           })}
-        </div>
+        </div> */}
+        </section>
 
+        <section className="w-full max-w-xl mt-10 text-center">
         <input
           type="text"
           placeholder="Your Shopify store URL (e.g. myshop.myshopify.com)"

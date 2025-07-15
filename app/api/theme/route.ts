@@ -15,6 +15,7 @@ export async function GET() {
     const transformed = allThemes.map(theme => ({
       _id: theme._id.toString(),
       name: theme.name,
+      category: theme.category,
       previewImage: theme.previewImage,
       previewUrl: theme.previewUrl,
       price: theme.price || 0, // 0 means free
