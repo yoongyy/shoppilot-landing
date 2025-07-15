@@ -1,9 +1,9 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 
-export default function FinishPage() {
+function FinishContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams?.get('session_id');
   const [shop, setShop] = useState('');
@@ -50,5 +50,13 @@ export default function FinishPage() {
         🔁 Back to Home
       </a>
     </main>
+  );
+}
+
+export default function FinishPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-20">🔄 Loading...</div>}>
+      <FinishContent />
+    </Suspense>
   );
 }
