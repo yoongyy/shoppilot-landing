@@ -118,7 +118,7 @@ def process_theme_for_session(session_id, theme_id, shop, access_token):
 
 def run_theme_processor():
     print("🔄 Checking for new Shopify theme tasks...")
-    new_tasks = tokens.find({"status": "new"})
+    new_tasks = tokens.find({"status": "paid"})
 
     for task in new_tasks:
         session_id = task.get("sessionId")

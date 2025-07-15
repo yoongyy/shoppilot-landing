@@ -1,0 +1,50 @@
+// pages/api/create-checkout-session.ts
+
+import { NextApiRequest, NextApiResponse } from 'next';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2024-04-10',
+});
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== 'POST') return res.status(405).end('Method Not Allowed');
+
+  const { themeId, email, sessionId, amount } = req.body;
+
+  if (!themeId || !email || !amount || !sessionId) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  try {
+    const checkoutSession = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      customer_email: email,
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            unit_amount: parseInt(amount) * 100, // in cents
+            product_data: {
+              name: `Theme Purchase - ${themeId}`,
+            },
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/finish?order_id=${sessionId}`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?cancel=true`,
+      metadata: {
+        themeId,
+        sessionId,
+        email,
+      },
+    });
+
+    res.status(200).json({ url: checkoutSession.url });
+  } catch (err) {
+    console.error('Stripe session error:', err);
+    res.status(500).json({ error: 'Failed to create checkout session' });
+  }
+}

@@ -1,7 +1,7 @@
 // /pages/api/shopify/callback.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import axios from 'axios';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY!;
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET!;
@@ -40,10 +40,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const client = new MongoClient(MONGO_DB_URL);
     const db = client.db('shoppilot');
     const tokens = db.collection('tokens');
+    const themes = db.collection('themes');
+
+    let theme = null;
+    let status = 'pending_payment';
+    if (themeId) {
+      theme = await themes.findOne({ _id: new ObjectId(themeId) });
+      if (!theme || !theme.price || parseFloat(theme.price) === 0) {
+        status = 'paid'; // Free themes are marked paid automatically
+      }
+    }
 
     await tokens.updateOne(
       { shop },
-      { $set: { shop, email, accessToken, sessionId, themeId, status: 'new', updatedAt: new Date() } },
+      { $set: { shop, email, accessToken, sessionId, themeId: themeId || null, status, updatedAt: new Date() } },
       { upsert: true }
     );
 
