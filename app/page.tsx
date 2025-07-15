@@ -1,127 +1,134 @@
-// app/page.tsx
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import ShopifyConnectButton from '@/components/ShopifyConnectButton';
 import { useSearchParams } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
 
 function PageContent() {
   const searchParams = useSearchParams();
   const shop = searchParams?.get('shop') || '';
   const sessionId = searchParams?.get('session_id') || '';
-  const isConnected = shop && sessionId;
 
+  const [email, setEmail] = useState('');
   const [prompt, setPrompt] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [themes, setThemes] = useState<any[]>([]);
+  const [selectedTheme, setSelectedTheme] = useState<any>(null);
 
   useEffect(() => {
-    if (sessionId) {
-      fetch(`/api/temp-store?id=${sessionId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data?.result) setResult(data.result);
-        });
+    fetch('/api/theme')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setThemes(data);
+          setSelectedTheme(data[0]);
+        } else {
+          console.error("Themes API did not return an array", data);
+          setThemes([]);
+        }
+      });
+  }, []);
+
+  useEffect(() => {
+    if (themes.length > 0 && !selectedTheme) {
+      setSelectedTheme(themes[0]);
     }
-  }, [sessionId]);
+  }, [themes, selectedTheme]);
 
-  const handleGenerate = async () => {
-    setLoading(true);
-    setResult(null);
-    const res = await fetch('/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt }),
-    });
-    const data = await res.json();
+  const handleConnect = () => {
+    if (!email) return alert('Please enter your email.');
+    if (!selectedTheme) return alert('Please select a theme.');
 
-    // POST 保存到临时存储
-    const storeRes = await fetch('/api/temp-store', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ result: data }),
-    });
-    const { id } = await storeRes.json();
+    const clientId = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY;
+    const redirectUri = encodeURIComponent('https://shoppilot.app/api/shopify/callback');
+    const scope = encodeURIComponent('write_products,write_themes,write_content');
+    let realSessionId = sessionId || uuidv4(); // generate if not present
+    const stateObj = {
+      sessionId: realSessionId,
+      email,
+      themeId: selectedTheme._id,
+    };
+    const state = encodeURIComponent(JSON.stringify(stateObj));
 
-    // 刷新带上 session_id
-    window.location.href = `/?session_id=${id}`;
+    const shop = prompt.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+
+    if (!shop.endsWith('.myshopify.com')) {
+      alert('Please enter a valid Shopify store URL (e.g., myshop.myshopify.com)');
+      return;
+    }
+
+    const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}&grant_options[]=per-user`;
+    window.location.href = authUrl;
   };
 
   return (
     <main className="min-h-screen bg-white text-gray-900 flex flex-col items-center p-6">
       <header className="w-full max-w-3xl text-center py-12">
         <h1 className="text-4xl font-bold mb-4">🛍️ ShopPilot</h1>
-        <p className="text-lg text-gray-600">Create your Shopify store instantly with ShopPilot</p>
+        <p className="text-lg text-gray-600">Create your Shopify store instantly!</p>
       </header>
 
       <section className="w-full max-w-xl flex flex-col items-center">
+        <h3 className="text-lg font-semibold mb-2">🎨 Select A Theme</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+          {themes.map((theme, index) => {
+            const isSelected = selectedTheme?._id?.toString() === theme._id?.toString();
+            return (
+              <div
+                key={theme._id?.toString() || index}
+                onClick={() => setSelectedTheme(theme)}
+                className={`border rounded-xl p-4 cursor-pointer transition shadow-sm
+                  ${isSelected ? 'border-blue-600 ring-2 ring-blue-400' : 'border-gray-300 hover:border-blue-300'}
+                `}
+              >
+                <img
+                  src={theme.previewImage}
+                  alt={theme.name}
+                  className="rounded mb-2 w-full h-36 object-cover"
+                />
+                <h4 className="font-semibold text-sm">{theme.name}</h4>
+                <p className={`text-sm ${theme.price ? 'text-gray-700' : 'text-green-600'}`}>
+                  {theme.price ? `$${theme.price}` : 'Free'}
+                </p>
+                <a
+                  href={theme.previewUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 underline mt-1 block"
+                >
+                  Preview
+                </a>
+                {/* {isSelected && (
+                  <div className="text-xs text-blue-500 mt-1 font-semibold">Selected</div>
+                )} */}
+              </div>
+            );
+          })}
+        </div>
+
         <input
           type="text"
-          placeholder="I want to sell cat accessories..."
+          placeholder="Your Shopify store URL (e.g. myshop.myshopify.com)"
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
+          className="w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring focus:border-blue-300 mb-4"
+        />
+
+        <input
+          type="email"
+          placeholder="Enter your email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring focus:border-blue-300"
         />
+
         <button
-          onClick={handleGenerate}
-          className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-2xl shadow hover:bg-blue-700 transition"
+          onClick={handleConnect}
+          className="mt-6 px-6 py-3 bg-green-600 text-white rounded-2xl shadow hover:bg-green-700 transition"
         >
-          {loading ? '🚧 Generating...' : '🚀 Generate Store Content'}
+          🚀 Connect Shopify
         </button>
       </section>
-
-      {result && result.products && Array.isArray(result.products) && (
-        <section className="w-full max-w-3xl mt-12 text-center">
-          <h2 className="text-xl font-semibold mb-4">✨ Store Preview</h2>
-          <div className="border rounded-xl p-6 shadow-sm bg-gray-50">
-            <h3 className="text-2xl font-bold">{result.storeName}</h3>
-            <p className="text-gray-600 mb-4">{result.description}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {result.products.map((product: any, index: number) => (
-                <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="rounded mb-2 w-full h-36 object-cover"
-                  />
-                  <h4 className="font-semibold">{product.name}</h4>
-                  <p className="text-sm text-gray-500">{product.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-    {result && (
-      <>
-        {!sessionId || !shop ? (
-          <ShopifyConnectButton sessionId={sessionId || ''} />
-        ) : (
-          <div className="mt-10 text-center">
-            <p className="text-green-600 font-semibold mb-4">
-              ✅ Successfully connected to Shopify store：{shop}
-            </p>
-            <button
-              className="px-6 py-3 bg-green-700 text-white rounded-2xl shadow hover:bg-green-800 transition"
-              onClick={async () => {
-                setLoading(true);
-                const res = await fetch('/api/shopify/deploy', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ sessionId }),
-                });
-                const data = await res.json();
-                setLoading(false);
-                alert(data.success ? '✅ Your store has been successfully deployed to Shopify' : `❌ Deployment failed：${data.error || 'Unknown error'}`);
-              }}
-            >
-              🚀 Deploy Store to Shopify
-            </button>
-          </div>
-        )}
-      </>
-    )}
 
       <footer className="mt-16 text-center text-gray-400 text-sm">
         <p>© 2025 ShopPilot</p>

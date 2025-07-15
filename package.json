@@ -15,7 +15,8 @@
     "mongodb": "^6.17.0",
     "next": "15.3.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "uuid": "^11.1.0"
   },
   "resolutions": {
     "@shopify/shopify-api": "6.1.0"
