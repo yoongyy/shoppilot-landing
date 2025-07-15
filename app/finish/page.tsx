@@ -1,4 +1,3 @@
-// app/finish/page.tsx
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -6,20 +5,28 @@ import { useEffect, useState } from 'react';
 
 export default function FinishPage() {
   const searchParams = useSearchParams();
-  const orderId = searchParams?.get('order_id');
+  const sessionId = searchParams?.get('session_id');
   const [shop, setShop] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (orderId) {
-      fetch(`/api/shopify/order-status?sessionId=${orderId}`)
+    if (sessionId) {
+      fetch(`/api/shopify/order-status?sessionId=${sessionId}`)
         .then(res => res.json())
         .then(data => {
           setShop(data.shop || '');
           setLoading(false);
         });
     }
-  }, [orderId]);
+  }, [sessionId]);
+
+  if (!sessionId) {
+    return (
+      <main className="min-h-screen flex justify-center items-center text-center p-6">
+        <p className="text-red-600 text-lg">❌ Missing session ID. Please try again from the beginning.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-white flex flex-col justify-center items-center p-6 text-center">
