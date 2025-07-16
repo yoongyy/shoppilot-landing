@@ -26,6 +26,7 @@ R2_ACCESS_KEY = os.getenv("R2_ACCESS_KEY")
 R2_SECRET_KEY = os.getenv("R2_SECRET_KEY")
 R2_BUCKET_NAME = os.getenv("R2_BUCKET_NAME", "shopilot-themes")
 R2_DOWNLOAD_DOMAIN = os.getenv("R2_DOWNLOAD_DOMAIN")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
 # MongoDB collections
 client = MongoClient(MONGO_URL)
@@ -127,6 +128,7 @@ def run_theme_processor():
         theme_id = task.get("themeId")
         shop = task.get("shop")
         access_token = task.get("accessToken")
+        email=task.get("email")
 
         print(f"🛠️ Processing theme for: {shop}, session: {session_id}")
 
@@ -144,6 +146,9 @@ def run_theme_processor():
                     }}
                 )
                 print(f"✅ Theme uploaded for {shop}: {result.get('previewUrl')}")
+
+                if email:
+                    send_resend_email(email, result.get('previewUrl'))
             else:
                 tokens.update_one(
                     {"_id": task["_id"]},
@@ -165,6 +170,56 @@ def run_theme_processor():
                 }}
             )
             print(f"❌ Exception for {shop}: {e}")
+
+def send_resend_email(to_email, preview_url):
+
+    headers = {
+        "Authorization": f"Bearer {RESEND_API_KEY}",
+        "Content-Type": "application/json"
+    }
+
+    data = {
+            "from": "ShopPilot <noreply@shoppilot.app>",
+            "to": [to_email],
+            "subject": "✅ Your Shopify Theme Has Been Deployed",
+            "html": f"""
+                <p>Hi there,</p>
+
+                <p>Your Shopify theme has been successfully uploaded!</p>
+
+                <p>
+                    <strong>🔍 Preview your theme:</strong><br>
+                    <a href="{preview_url}" target="_blank">{preview_url}</a><br>
+                    <strong>Password: 123456</strong>
+                </p>
+
+                <p><strong>📢 How to activate your new theme:</strong></p>
+                <ol>
+                    <li>Log in to your Shopify Admin.</li>
+                    <li>Go to <strong>Online Store &gt; Themes</strong>.</li>
+                    <li>Scroll to the <em>Theme Library</em> section and find your new theme.</li>
+                    <li>Click the <strong>Actions</strong> button next to the theme and select <strong>Publish</strong>.</li>
+                </ol>
+
+                <p><strong>⚠️ Not seeing this email in your inbox?</strong></p>
+                <p>
+                    If this message went to your spam folder, it's likely because our domain is still warming up or not fully trusted by your email provider yet.
+                    Please mark this email as <strong>"Not Spam"</strong> and add <code>noreply@shoppilot.app</code> to your contacts to ensure future delivery.
+                </p>
+
+                <br>
+                <p>Thanks for using <strong>ShopPilot</strong>! 🚀</p>
+            """
+        }
+
+    try:
+        response = requests.post("https://api.resend.com/emails", headers=headers, json=data)
+        if response.status_code == 200:
+            print(f"📧 Email sent to {to_email}")
+        else:
+            print(f"❌ Failed to send email: {response.text}")
+    except Exception as e:
+        print(f"❌ Email sending exception: {e}")
 
 if __name__ == "__main__":
     time.sleep(5)
