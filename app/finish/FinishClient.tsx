@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 
 export default function FinishClient() {
   const searchParams = useSearchParams();
-  const orderId = searchParams?.get('order_id');
+  const orderId = searchParams?.get('session_id');
 
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
