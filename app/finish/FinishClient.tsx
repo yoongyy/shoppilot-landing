@@ -109,12 +109,12 @@ export default function FinishClient() {
         <p className="text-red-500">❌ Failed to load order info.</p>
       )}
 
-      <a
+      {/* <a
         href="/"
         className="mt-8 inline-block px-6 py-3 bg-gray-100 text-sm rounded-xl border hover:bg-gray-200"
       >
         🔁 Back to Home
-      </a>
+      </a> */}
     </main>
   );
 }
