@@ -119,7 +119,7 @@ def process_theme_for_session(session_id, theme_id, shop, access_token):
     return upload_shopify_theme(session_id, zip_url, access_token, shop)
 
 def run_theme_processor():
-    print(f"🔄 Checking for new Shopify theme tasks... at {datetime.now()}", flush=True)
+    # print(f"🔄 Checking for new Shopify theme tasks... at {datetime.now()}", flush=True)
     new_tasks = tokens.find({"status": "paid"})
 
     for task in new_tasks:
