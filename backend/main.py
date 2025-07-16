@@ -4,6 +4,8 @@ import uuid
 import zipfile
 import requests
 import boto3
+import time
+from datetime import datetime
 from pymongo import MongoClient
 from bson import ObjectId
 from dotenv import load_dotenv
@@ -117,7 +119,7 @@ def process_theme_for_session(session_id, theme_id, shop, access_token):
     return upload_shopify_theme(session_id, zip_url, access_token, shop)
 
 def run_theme_processor():
-    print("🔄 Checking for new Shopify theme tasks...")
+    print("🔄 Checking for new Shopify theme tasks...", flush=True)
     new_tasks = tokens.find({"status": "paid"})
 
     for task in new_tasks:
@@ -165,5 +167,6 @@ def run_theme_processor():
             print(f"❌ Exception for {shop}: {e}")
 
 if __name__ == "__main__":
-    from datetime import datetime
+    time.sleep(5)
     run_theme_processor()
+    exit()
