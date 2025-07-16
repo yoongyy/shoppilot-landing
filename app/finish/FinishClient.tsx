@@ -14,7 +14,7 @@ export default function FinishClient() {
 
   useEffect(() => {
     if (orderId) {
-      fetch(`/api/shopify/order-status?sessionId=${orderId}`) // ✅ fix typo: sessionId not session_id
+      fetch(`/api/shopify/order-status?sessionId=${orderId}`) 
         .then(res => res.json())
         .then(res => {
           if (res.success) {
@@ -70,20 +70,29 @@ export default function FinishClient() {
             ✅ Connected to <strong>{data.shop}</strong>
           </p>
 
-          {data.status === 'paid' ? (
+          {data.status === 'paid' ||  data.status === 'done' ? (
             <>
               <p className="text-gray-600 max-w-md">
                 Your theme is being processed. You’ll receive an email when the upload completes.
               </p>
               {data.previewUrl && (
-                <a
-                  href={data.previewUrl}
-                  target="_blank"
-                  className="mt-4 text-blue-500 underline block"
-                >
-                  🔍 View Store Preview
-                </a>
+                <>
+                  <a
+                    href={data.previewUrl}
+                    target="_blank"
+                    className="mt-4 text-blue-500 underline block"
+                  >
+                    🔍 View Store Preview
+                  </a>
+                  <p className="text-gray-600 mt-2">Password: 123456</p>
+                </>
               )}
+              <a
+                href="/"
+                className="mt-8 inline-block px-6 py-3 bg-gray-100 text-sm rounded-xl border hover:bg-gray-200"
+              >
+                🔁 Back to Home
+              </a>
             </>
           ) : data.amount > 0 ? (
             <>
@@ -108,13 +117,6 @@ export default function FinishClient() {
       ) : (
         <p className="text-red-500">❌ Failed to load order info.</p>
       )}
-
-      {/* <a
-        href="/"
-        className="mt-8 inline-block px-6 py-3 bg-gray-100 text-sm rounded-xl border hover:bg-gray-200"
-      >
-        🔁 Back to Home
-      </a> */}
     </main>
   );
 }

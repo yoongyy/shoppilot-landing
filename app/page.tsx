@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-// import ShopifyConnectButton from '@/components/ShopifyConnectButton';
 import ThemeSelector from '@/components/ThemeSelector';
 import { useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
@@ -72,40 +71,6 @@ function PageContent() {
       <section className="w-full max-w-xl flex flex-col items-center">
         <h3 className="text-lg font-semibold mb-2">🎨 Select A Theme</h3>
         <ThemeSelector selectedTheme={selectedTheme} onThemeSelect={setSelectedTheme} />
-
-        {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-          {themes.map((theme, index) => {
-            const isSelected = selectedTheme?._id?.toString() === theme._id?.toString();
-            return (
-              <div
-                key={theme._id?.toString() || index}
-                onClick={() => setSelectedTheme(theme)}
-                className={`border rounded-xl p-4 cursor-pointer transition shadow-sm
-                  ${isSelected ? 'border-blue-600 ring-2 ring-blue-400' : 'border-gray-300 hover:border-blue-300'}
-                `}
-              >
-                <img
-                  src={theme.previewImage}
-                  alt={theme.name}
-                  className="rounded mb-2 w-full h-36 object-cover"
-                />
-                <h4 className="font-semibold text-sm">{theme.name}</h4>
-                <p className={`text-sm ${theme.price ? 'text-gray-700' : 'text-green-600'}`}>
-                  {theme.price ? `$${theme.price}` : 'Free'}
-                </p>
-                <a
-                  href={theme.previewUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-600 underline mt-1 block"
-                >
-                  Preview Theme
-                </a>
-                <p className="text-sm text-gray-500 mt-1">Password: 123456</p>
-              </div>
-            );
-          })}
-        </div> */}
         </section>
 
         <section className="w-full max-w-xl mt-10 text-center">

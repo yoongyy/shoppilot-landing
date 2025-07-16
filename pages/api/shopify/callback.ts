@@ -22,7 +22,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   } catch (e) {
     return res.status(400).json({ error: 'Invalid state format' });
   }
-  // const sessionId = state.replace('shoppilot-secure-state-', '');
 
   if (!shop || !code || typeof shop !== 'string' || typeof code !== 'string') {
     return res.status(400).json({ error: 'Missing required parameters' });
