@@ -10,7 +10,7 @@ export const config = {
 };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-06-30.basil',
+  apiVersion: '2025-06-30.basil',
 });
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -18,34 +18,24 @@ const MONGO_URL = process.env.MONGO_DB_URL!;
 const DB_NAME = process.env.MONGODB_DB || 'shoppilot';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end('Method Not Allowed');
+  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
-  const sig = req.headers['stripe-signature']!;
-  let buf: Buffer;
-
-  try {
-    buf = await buffer(req);
-  } catch (err) {
-    console.error('Error getting raw buffer:', err);
-    return res.status(400).send('Invalid buffer');
-  }
-
+  const sig = req.headers['stripe-signature'];
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(buf.toString(), sig, endpointSecret);
+    const buf = await buffer(req);
+    event = stripe.webhooks.constructEvent(buf, sig!, endpointSecret);
   } catch (err: any) {
-    console.error('⚠️ Signature verification failed:', err.message);
+    console.error('❌ Stripe webhook error:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // ✅ Process checkout.session.completed
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     const sessionId = session.metadata?.sessionId;
 
     if (!sessionId) {
-      console.warn('Missing sessionId in metadata');
       return res.status(400).send('Missing sessionId');
     }
 
@@ -56,16 +46,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       await tokens.updateOne(
         { sessionId },
-        { $set: { status: 'paid', paidAt: new Date() } }
+        {
+          $set: {
+            status: 'paid',
+            paidAt: new Date(),
+          },
+        }
       );
 
-      console.log(`✅ Stripe payment complete. Marked session ${sessionId} as paid`);
-      client.close();
-    } catch (err) {
-      console.error('MongoDB error:', err);
+      console.log(`✅ Session ${sessionId} marked as paid`);
+      await client.close();
+    } catch (e) {
+      console.error('❌ DB error:', e);
       return res.status(500).send('Database error');
     }
   }
 
-  return res.status(200).send('Webhook received');
+  return res.status(200).send('OK');
 }
