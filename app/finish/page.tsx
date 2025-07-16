@@ -4,7 +4,7 @@ import FinishClient from './FinishClient';
 
 export default function FinishPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<p className="text-center mt-10">Loading...</p>}>
       <FinishClient />
     </Suspense>
   );
