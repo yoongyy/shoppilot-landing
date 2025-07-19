@@ -10,7 +10,7 @@ function PageContent() {
   const shop = searchParams?.get('shop') || '';
   const sessionId = searchParams?.get('session_id') || '';
 
-  const [email, setEmail] = useState('');
+  // const [email, setEmail] = useState('');
   const [prompt, setPrompt] = useState('');
   const [themes, setThemes] = useState<any[]>([]);
   const [selectedTheme, setSelectedTheme] = useState<any>(null);
@@ -36,7 +36,7 @@ function PageContent() {
   }, [themes, selectedTheme]);
 
   const handleConnect = () => {
-    if (!email) return alert('Please enter your email.');
+    // if (!email) return alert('Please enter your email.');
     if (!selectedTheme) return alert('Please select a theme.');
 
     const clientId = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY;
@@ -45,7 +45,7 @@ function PageContent() {
     let realSessionId = sessionId || uuidv4(); // generate if not present
     const stateObj = {
       sessionId: realSessionId,
-      email,
+      // email,
       themeId: selectedTheme._id,
     };
     const state = encodeURIComponent(JSON.stringify(stateObj));
@@ -82,13 +82,13 @@ function PageContent() {
           className="w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring focus:border-blue-300 mb-4"
         />
 
-        <input
+        {/* <input
           type="email"
           placeholder="Enter your email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring focus:border-blue-300"
-        />
+        /> */}
 
         <button
           onClick={handleConnect}

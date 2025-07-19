@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const client = await MongoClient.connect(MONGO_URL);
     const db = client.db(DB_NAME);
     const temp_results = db.collection('temp_results');
-    const tokens = db.collection('tokens');
+    const users = db.collection('users');
 
     // Fetch generated store data
     const storeData = await temp_results.findOne({ id: sessionId });
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     }
 
     // Fetch Shopify token info
-    const tokenData = await tokens.findOne({ sessionId });
+    const tokenData = await users.findOne({ sessionId });
     if (!tokenData || !tokenData.accessToken || !tokenData.shop) {
       return NextResponse.json({ success: false, error: 'Shopify authorization info not found' }, { status: 404 });
     }

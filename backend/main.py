@@ -32,7 +32,7 @@ RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 client = MongoClient(MONGO_URL)
 db = client[os.getenv("MONGODB_DB", "shoppilot")]
 temp_results = db["temp_results"]
-tokens = db["tokens"]
+users = db["users"]
 themes = db["themes"]
 
 def unzip_theme(source_zip, dest_dir):
@@ -121,7 +121,7 @@ def process_theme_for_session(session_id, theme_id, shop, access_token):
 
 def run_theme_processor():
     # print(f"🔄 Checking for new Shopify theme tasks... at {datetime.now()}", flush=True)
-    new_tasks = tokens.find({"status": "paid"})
+    new_tasks = users.find({"status": "paid"})
 
     for task in new_tasks:
         session_id = task.get("sessionId")
@@ -136,7 +136,7 @@ def run_theme_processor():
             result = process_theme_for_session(session_id, theme_id, shop, access_token)
 
             if result.get("success"):
-                tokens.update_one(
+                users.update_one(
                     {"_id": task["_id"]},
                     {"$set": {
                         "status": "done",
@@ -150,7 +150,7 @@ def run_theme_processor():
                 if email:
                     send_resend_email(email, result.get('previewUrl'))
             else:
-                tokens.update_one(
+                users.update_one(
                     {"_id": task["_id"]},
                     {"$set": {
                         "status": "failed",
@@ -161,7 +161,7 @@ def run_theme_processor():
                 print(f"❌ Failed to upload for {shop}: {result.get('error')}")
 
         except Exception as e:
-            tokens.update_one(
+            users.update_one(
                 {"_id": task["_id"]},
                 {"$set": {
                     "status": "failed",

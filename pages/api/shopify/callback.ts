@@ -11,13 +11,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { code, shop } = req.query;
   const rawState = req.query.state as string; 
   let sessionId = '';
-  let email = '';
+  // let email = '';
   let themeId = '';
 
   try {
     const parsed = JSON.parse(decodeURIComponent(rawState));
     sessionId = parsed.sessionId;
-    email = parsed.email || '';
+    // email = parsed.email || '';
     themeId = parsed.themeId || '';
   } catch (e) {
     return res.status(400).json({ error: 'Invalid state format' });
@@ -36,9 +36,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const accessToken = tokenRes.data.access_token;
 
+    // Step 2: Get shop details (including email)
+    const shopRes = await axios.get(`https://${shop}/admin/api/2023-07/shop.json`, {
+      headers: {
+        'X-Shopify-Access-Token': accessToken,
+      },
+    });
+
+    const shopData = shopRes.data.shop;
+    const email = shopData.email;
+
     const client = new MongoClient(MONGO_DB_URL);
     const db = client.db('shoppilot');
-    const tokens = db.collection('tokens');
+    const users = db.collection('users');
     const themes = db.collection('themes');
 
     let theme = null;
@@ -50,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    await tokens.updateOne(
+    await users.updateOne(
       { shop },
       { $set: { shop, email, accessToken, sessionId, themeId: themeId || null, status, updatedAt: new Date() } },
       { upsert: true }

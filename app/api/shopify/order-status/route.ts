@@ -15,10 +15,10 @@ export async function GET(req: NextRequest) {
   try {
     const client = await MongoClient.connect(MONGO_URL);
     const db = client.db(DB_NAME);
-    const tokens = db.collection('tokens');
+    const users = db.collection('users');
     const themes = db.collection('themes');
 
-    const tokenRecord = await tokens.findOne({ sessionId });
+    const tokenRecord = await users.findOne({ sessionId });
     if (!tokenRecord) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
     }

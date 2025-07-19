@@ -42,9 +42,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     try {
       const client = await MongoClient.connect(MONGO_URL);
       const db = client.db(DB_NAME);
-      const tokens = db.collection('tokens');
+      const users = db.collection('users');
 
-      await tokens.updateOne(
+      await users.updateOne(
         { sessionId },
         {
           $set: {
