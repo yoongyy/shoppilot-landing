@@ -11,7 +11,7 @@ export async function GET() {
     const db = client.db(DB_NAME);
     const themes = db.collection('themes');
 
-    const allThemes = await themes.find({}).toArray();
+    const allThemes = await themes.find({}).sort({ _id: -1 }).toArray();
     const transformed = allThemes.map(theme => ({
       _id: theme._id.toString(),
       name: theme.name,
