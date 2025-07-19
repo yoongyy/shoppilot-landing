@@ -190,7 +190,6 @@ def send_resend_email(to_email, preview_url):
                 <p>
                     <strong>🔍 Preview your theme:</strong><br>
                     <a href="{preview_url}" target="_blank">{preview_url}</a><br>
-                    <strong>Password: 123456</strong>
                 </p>
 
                 <p><strong>📢 How to activate your new theme:</strong></p>

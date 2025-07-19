@@ -84,7 +84,6 @@ export default function FinishClient() {
                   >
                     🔍 View Store Preview
                   </a>
-                  <p className="text-gray-600 mt-2">Password: 123456</p>
                 </>
               )}
               <a
