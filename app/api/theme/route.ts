@@ -18,6 +18,7 @@ export async function GET() {
       category: theme.category,
       previewImage: theme.previewImage,
       previewUrl: theme.previewUrl,
+      password: theme.password,
       price: theme.price || 0, // 0 means free
     }));
     return NextResponse.json(transformed);

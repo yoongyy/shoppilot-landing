@@ -9,9 +9,10 @@ interface Theme {
   previewImage: string;
   category?: string;
   previewUrl?: string;
+  password?: string;
 }
 
-const categories = ["All", "Free", "Paid", "Fashion", "Electronics", "Minimal", "Premium"];
+const categories = ["All", "Free", "Fashion", "Electronics", "Food"];
 const PAGE_SIZE = 6;
 
 export default function ThemeSelector({
@@ -123,7 +124,9 @@ export default function ThemeSelector({
                   🔍 Preview Theme
                 </a>
               )}
-              <p className="text-sm text-gray-500 mt-1">Password: 123456</p>
+              {theme.password && (
+                <p className="text-sm text-gray-500 mt-1">Password: {theme.password}</p>
+              )}
               {isSelected && (
                 <div className="text-xs text-blue-500 mt-1 font-semibold">
                   ✅ Selected
