@@ -12,7 +12,7 @@ interface Theme {
   password?: string;
 }
 
-const categories = ["All", "Free", "Fashion", "Electronics", "Food", "Design"];
+const categories = ["All", "Free", "Fashion", "Electronics", "Foods", "Cars", "Design"];
 const PAGE_SIZE = 6;
 
 export default function ThemeSelector({
