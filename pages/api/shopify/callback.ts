@@ -71,17 +71,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     if (!user || !user._id) {
       console.error('User creation or lookup failed:', userResult);
-      return new Response('User creation failed', { status: 500 });
+      res.status(500).json({ error: 'User creation failed', detail: "No user found" });
     }
 
     let theme = null;
 
-    console.log('themeId from state:', themeId);
-
     // Step 4: Create order
     if (themeId) {
       theme = await themes.findOne({ _id: new ObjectId(themeId) });
-      console.log('Theme found?', theme);
       if (theme) {
         const isFree = !theme.price || parseFloat(theme.price) === 0;
         const status = isFree ? 'paid' : 'pending_payment';
@@ -97,7 +94,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           createdAt: new Date(),
           updatedAt: new Date(),
         });
-        console.log('Order insert result:', insertResult);
       }
     }
 

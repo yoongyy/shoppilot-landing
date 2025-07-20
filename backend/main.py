@@ -140,7 +140,7 @@ def run_theme_processor():
             result = process_theme_for_session(session_id, theme_id, shop, access_token)
 
             if result.get("success"):
-                task.update_one(
+                orders.update_one(
                     {"_id": task["_id"]},
                     {"$set": {
                         "status": "done",
@@ -154,7 +154,7 @@ def run_theme_processor():
                 if email:
                     send_resend_email(email, result.get('previewUrl'))
             else:
-                task.update_one(
+                orders.update_one(
                     {"_id": task["_id"]},
                     {"$set": {
                         "status": "failed",
@@ -165,7 +165,7 @@ def run_theme_processor():
                 print(f"❌ Failed to upload for {shop}: {result.get('error')}")
 
         except Exception as e:
-            task.update_one(
+            orders.update_one(
                 {"_id": task["_id"]},
                 {"$set": {
                     "status": "failed",
