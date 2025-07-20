@@ -72,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const user = userResult?.value;
 
     let theme = null;
-    let status = 'pending_payment';
+    // let status = 'pending_payment';
 
     // Step 4: Create order
     if (themeId) {
@@ -82,8 +82,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const status = isFree ? 'paid' : 'pending_payment';
 
         await orders.insertOne({
-          sessionId,
           userId: user._id,
+          sessionId,
           shop,
           themeId: theme._id,
           taskType: 'install',
