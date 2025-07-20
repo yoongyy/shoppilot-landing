@@ -102,7 +102,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.redirect(`/finish?shop=${shop}&session_id=${sessionId}`);
   } catch (err: any) {
     console.error('Shopify callback error', err?.response?.data || err);
-    console.error('Callback error:', err);
     res.status(500).json({ error: 'OAuth 失败', detail: err?.response?.data || err });
   }
 }
