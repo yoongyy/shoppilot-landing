@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyShopifyWebhook } from '@/utils/verifyShopifyWebhook';
 
-const SHOPIFY_SECRET = process.env.SHOPIFY_APP_SECRET!;
+const SHOPIFY_SECRET = process.env.SHOPIFY_API_SECRET!;
 
 export default async function handler(
     req: NextApiRequest,
