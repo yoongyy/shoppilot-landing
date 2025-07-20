@@ -34,6 +34,7 @@ db = client[os.getenv("MONGODB_DB", "shoppilot")]
 temp_results = db["temp_results"]
 users = db["users"]
 themes = db["themes"]
+orders = db["orders"]
 
 def unzip_theme(source_zip, dest_dir):
     with zipfile.ZipFile(source_zip, 'r') as zip_ref:
@@ -121,14 +122,17 @@ def process_theme_for_session(session_id, theme_id, shop, access_token):
 
 def run_theme_processor():
     # print(f"🔄 Checking for new Shopify theme tasks... at {datetime.now()}", flush=True)
-    new_tasks = users.find({"status": "paid"})
+    new_tasks = orders.find({"status": "paid"})
 
     for task in new_tasks:
         session_id = task.get("sessionId")
         theme_id = task.get("themeId")
-        shop = task.get("shop")
-        access_token = task.get("accessToken")
-        email=task.get("email")
+        user_id = task.get("userId")
+
+        userRecord = users.find_one({"_id": ObjectId(user_id)})
+        shop = userRecord.get("shop")
+        access_token = userRecord.get("accessToken")
+        email = userRecord.get("email")
 
         print(f"🛠️ Processing theme for: {shop}, session: {session_id}")
 
@@ -136,12 +140,12 @@ def run_theme_processor():
             result = process_theme_for_session(session_id, theme_id, shop, access_token)
 
             if result.get("success"):
-                users.update_one(
+                task.update_one(
                     {"_id": task["_id"]},
                     {"$set": {
                         "status": "done",
                         "previewUrl": result.get("previewUrl"),
-                        "themeId": result.get("themeId"),
+                        "shopifythemeId": result.get("themeId"),
                         "updatedAt": datetime.utcnow()
                     }}
                 )
@@ -150,7 +154,7 @@ def run_theme_processor():
                 if email:
                     send_resend_email(email, result.get('previewUrl'))
             else:
-                users.update_one(
+                task.update_one(
                     {"_id": task["_id"]},
                     {"$set": {
                         "status": "failed",
@@ -161,7 +165,7 @@ def run_theme_processor():
                 print(f"❌ Failed to upload for {shop}: {result.get('error')}")
 
         except Exception as e:
-            users.update_one(
+            task.update_one(
                 {"_id": task["_id"]},
                 {"$set": {
                     "status": "failed",

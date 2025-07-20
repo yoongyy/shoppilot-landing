@@ -50,21 +50,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const db = client.db('shoppilot');
     const users = db.collection('users');
     const themes = db.collection('themes');
+    const orders = db.collection('orders');
+
+    // Upsert user
+    const userResult = await users.findOneAndUpdate(
+      { shop },
+      {
+        $set: {
+          shop,
+          email,
+          accessToken,
+          updatedAt: new Date(),
+        },
+        $setOnInsert: {
+          createdAt: new Date(),
+        },
+      },
+      { upsert: true, returnDocument: 'after' }
+    );
+
+    const user = userResult?.value;
 
     let theme = null;
     let status = 'pending_payment';
+
+    // Step 4: Create order
     if (themeId) {
       theme = await themes.findOne({ _id: new ObjectId(themeId) });
-      if (!theme || !theme.price || parseFloat(theme.price) === 0) {
-        status = 'paid'; // Free themes are marked paid automatically
+      if (theme) {
+        const isFree = !theme.price || parseFloat(theme.price) === 0;
+        const status = isFree ? 'paid' : 'pending_payment';
+
+        await orders.insertOne({
+          sessionId,
+          userId: user._id,
+          shop,
+          themeId: theme._id,
+          taskType: 'install',
+          status,
+          price: parseFloat(theme.price || '0'),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
       }
     }
-
-    await users.updateOne(
-      { shop },
-      { $set: { shop, email, accessToken, sessionId, themeId: themeId || null, status, updatedAt: new Date() } },
-      { upsert: true }
-    );
 
     // ✅ 带上 sessionId 回首页，恢复页面状态
     res.redirect(`/finish?shop=${shop}&session_id=${sessionId}`);

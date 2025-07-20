@@ -17,31 +17,37 @@ export async function GET(req: NextRequest) {
     const db = client.db(DB_NAME);
     const users = db.collection('users');
     const themes = db.collection('themes');
+    const orders = db.collection('orders');
 
-    const tokenRecord = await users.findOne({ sessionId });
-    if (!tokenRecord) {
+    const orderRecord = await orders.findOne({ sessionId });
+    if (!orderRecord) {
       return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+    }
+
+    const userRecord = await users.findOne({ _id: new ObjectId(orderRecord.userId) });
+    if (!userRecord) {
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
 
     let theme = null;
     let price = 0;
 
-    if (tokenRecord.themeId) {
-      theme = await themes.findOne({ _id: new ObjectId(tokenRecord.themeId) });
+    if (orderRecord.themeId) {
+      theme = await themes.findOne({ _id: new ObjectId(orderRecord.themeId) });
       price = theme?.price ? parseFloat(theme.price) : 0;
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        shop: tokenRecord.shop,
-        accessToken: tokenRecord.accessToken,
-        deployed: tokenRecord.deployed || false,
-        themeId: tokenRecord.themeId || null,
-        previewUrl: tokenRecord.previewUrl || null,
-        email: tokenRecord.email || null,
-        createdAt: tokenRecord.createdAt || null,
-        status: tokenRecord.status || 'new',
+        shop: userRecord.shop,
+        accessToken: userRecord.accessToken,
+        email: userRecord.email || null,
+        deployed: orderRecord.deployed || false,
+        themeId: orderRecord.themeId || null,
+        previewUrl: orderRecord.previewUrl || null,
+        createdAt: orderRecord.createdAt || null,
+        status: orderRecord.status || 'new',
         amount: price,
       },
     });
