@@ -72,16 +72,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const user = userResult?.value;
 
     let theme = null;
-    // let status = 'pending_payment';
+
+    console.log('themeId from state:', themeId);
 
     // Step 4: Create order
     if (themeId) {
       theme = await themes.findOne({ _id: new ObjectId(themeId) });
+      console.log('Theme found?', theme);
       if (theme) {
         const isFree = !theme.price || parseFloat(theme.price) === 0;
         const status = isFree ? 'paid' : 'pending_payment';
 
-        await orders.insertOne({
+        const insertResult = await orders.insertOne({
           userId: user._id,
           sessionId,
           shop,
@@ -92,6 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           createdAt: new Date(),
           updatedAt: new Date(),
         });
+        console.log('Order insert result:', insertResult);
       }
     }
 
@@ -99,6 +102,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.redirect(`/finish?shop=${shop}&session_id=${sessionId}`);
   } catch (err: any) {
     console.error('Shopify callback error', err?.response?.data || err);
+    console.error('Callback error:', err);
     res.status(500).json({ error: 'OAuth 失败', detail: err?.response?.data || err });
   }
 }
