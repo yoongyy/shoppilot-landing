@@ -7,11 +7,11 @@ export default async function handler(
     req: NextApiRequest,
     res: NextApiResponse
 ) {
-    // if (req.method !== 'POST') {
-    //     return res.status(405).end('Method Not Allowed');
-    // }
+    if (req.method !== 'POST') {
+        return res.status(405).end('Method Not Allowed');
+    }
 
-    const verified = verifyShopifyWebhook(req, SHOPIFY_SECRET);
+    // const verified = verifyShopifyWebhook(req, SHOPIFY_SECRET);
 
     // if (!verified) {
     //     console.warn('⚠️ Webhook verification failed');
