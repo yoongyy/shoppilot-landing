@@ -56,20 +56,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const userResult = await users.findOneAndUpdate(
       { shop },
       {
-        $set: {
+        $setOnInsert: {
           shop,
           email,
           accessToken,
-          updatedAt: new Date(),
-        },
-        $setOnInsert: {
           createdAt: new Date(),
+          updatedAt: new Date(),
         },
       },
       { upsert: true, returnDocument: 'after' }
     );
 
     const user = userResult?.value;
+    
+    if (!user || !user._id) {
+      console.error('User creation or lookup failed:', userResult);
+      return new Response('User creation failed', { status: 500 });
+    }
 
     let theme = null;
 
