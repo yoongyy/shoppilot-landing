@@ -11,12 +11,12 @@ export default async function handler(
         return res.status(405).end('Method Not Allowed');
     }
 
-    // const verified = verifyShopifyWebhook(req, SHOPIFY_SECRET);
+    const verified = verifyShopifyWebhook(req, SHOPIFY_SECRET);
 
-    // if (!verified) {
-    //     console.warn('⚠️ Webhook verification failed');
-    //     return res.status(401).json({ message: 'Unauthorized' });
-    //   }
+    if (!verified) {
+        console.warn('⚠️ Webhook verification failed');
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
 
       console.log('✅ Verified webhook received:', req.body);
 
