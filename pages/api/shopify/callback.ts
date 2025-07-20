@@ -67,7 +67,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { upsert: true, returnDocument: 'after' }
     );
 
-    const user = userResult?.value;
+    const user = userResult;
     
     if (!user || !user._id) {
       console.error('User creation or lookup failed:', userResult);
