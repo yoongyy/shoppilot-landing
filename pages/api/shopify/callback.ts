@@ -84,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const status = isFree ? 'paid' : 'pending_payment';
 
         const insertResult = await orders.insertOne({
-          userId: user._id,
+          userId: user?._id,
           sessionId,
           shop,
           themeId: theme._id,
