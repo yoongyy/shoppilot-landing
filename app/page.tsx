@@ -47,12 +47,6 @@ function PageContent() {
     };
     const state = encodeURIComponent(JSON.stringify(stateObj));
 
-    // const shop = prompt.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
-
-    // if (!shop.endsWith('.myshopify.com')) {
-    //   alert('Please enter a valid Shopify store URL (e.g., myshop.myshopify.com)');
-    //   return;
-    // }
     const shopName = prompt.trim().toLowerCase();
 
     if (!shopName || shopName.includes('.') || shopName.includes(' ')) {
@@ -79,17 +73,7 @@ function PageContent() {
         </section>
 
         <section className="w-full max-w-xl mt-10 text-center">
-        {/* <input
-          type="text"
-          placeholder="Your Shopify store URL (e.g. myshop.myshopify.com)"
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          className="w-full px-4 py-3 border rounded-xl shadow-sm focus:outline-none focus:ring focus:border-blue-300 mb-4"
-        /> */}
         <div className="w-full">
-          {/* <label className="block text-left mb-2 text-sm text-gray-600 font-medium">
-            Enter your Shopify store name */}
-          {/* </label> */}
           <div className="flex rounded-xl overflow-hidden border border-gray-300 shadow-sm focus-within:ring-2 focus-within:ring-blue-400">
             <span className="px-3 py-3 bg-gray-100 text-gray-500 text-sm select-none">
               https://
@@ -105,9 +89,6 @@ function PageContent() {
               .myshopify.com
             </span>
           </div>
-          {/* <p className="text-xs text-gray-500 mt-1">
-            Example: if your store is <strong>https://shoppilot.myshopify.com</strong>, enter <strong>shoppilot</strong>
-          </p> */}
         </div>
 
 
