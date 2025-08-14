@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import ThemeSelector from '@/components/ThemeSelector';
 import { useSearchParams } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
+import Link from 'next/link'; // ⬅️ add this
 
 function PageContent() {
   const searchParams = useSearchParams();
@@ -40,11 +41,8 @@ function PageContent() {
     const clientId = process.env.NEXT_PUBLIC_SHOPIFY_API_KEY;
     const redirectUri = encodeURIComponent('https://shoppilot.app/api/shopify/callback');
     const scope = encodeURIComponent('write_products,write_themes,write_content');
-    let realSessionId = sessionId || uuidv4(); // generate if not present
-    const stateObj = {
-      sessionId: realSessionId,
-      themeId: selectedTheme._id,
-    };
+    let realSessionId = sessionId || uuidv4(); 
+    const stateObj = { sessionId: realSessionId, themeId: selectedTheme._id };
     const state = encodeURIComponent(JSON.stringify(stateObj));
 
     const shopName = prompt.trim().toLowerCase();
@@ -63,16 +61,16 @@ function PageContent() {
   return (
     <main className="min-h-screen bg-white text-gray-900 flex flex-col items-center p-6">
       <header className="w-full max-w-3xl text-center py-12">
-        <h1 className="text-4xl font-bold mb-4">🛍️ ShopPilot</h1>
-        <p className="text-lg text-gray-600">Create your Shopify store instantly!</p>
+        <h1 className="text-4xl font-bold mb-2">🛍️ ShopPilot</h1>
+        <p className="text-lg text-gray-600 mb-4">Create your Shopify store instantly!</p>
       </header>
 
       <section className="w-full max-w-xl flex flex-col items-center">
         <h3 className="text-lg font-semibold mb-2">🎨 Select A Theme</h3>
         <ThemeSelector selectedTheme={selectedTheme} onThemeSelect={setSelectedTheme} />
-        </section>
+      </section>
 
-        <section className="w-full max-w-xl mt-10 text-center">
+      <section className="w-full max-w-xl mt-10 text-center">
         <div className="w-full">
           <div className="flex rounded-xl overflow-hidden border border-gray-300 shadow-sm focus-within:ring-2 focus-within:ring-blue-400">
             <span className="px-3 py-3 bg-gray-100 text-gray-500 text-sm select-none">
@@ -91,7 +89,6 @@ function PageContent() {
           </div>
         </div>
 
-
         <button
           onClick={handleConnect}
           className="mt-6 px-6 py-3 bg-green-600 text-white rounded-2xl shadow hover:bg-green-700 transition"
@@ -100,7 +97,10 @@ function PageContent() {
         </button>
       </section>
 
-      <footer className="mt-16 text-center text-gray-400 text-sm">
+      <footer className="mt-16 text-center text-gray-400 text-sm space-y-2">
+        <Link href="/contact" className="text-blue-600 underline">
+          Contact Us
+        </Link>
         <p>© 2025 ShopPilot</p>
       </footer>
     </main>
